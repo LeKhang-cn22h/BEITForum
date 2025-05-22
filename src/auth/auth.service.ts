@@ -7,7 +7,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { SignUpDto } from './dto/create-auth.dto';
+import { SignUpDto } from './dto/signupdto';
+import { LoginData } from './schema/login.schema';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { User,UserSchema } from './schema/user.schema';
 import * as bcrypt from 'bcrypt';
@@ -53,6 +54,62 @@ export class AuthService {
       };
     } catch (error) {
       throw new InternalServerErrorException('Đã xảy ra lỗi khi đăng ký tài khoản: '+error);
+    }
+  }
+
+  async loginAsPhone(loginData:LoginData){
+    
+  }
+
+  async loginAsEmail(loginData:LoginData){
+    try {
+      const { email, password } = loginData;
+      let user =
+        await this.userModel.findOne({ email});
+
+      if (!user) {
+        throw new UnauthorizedException('Không tìm thấy người dùng: '+email+" "+password);
+      }
+
+      const passwordMatches = await bcrypt.compare(password, user.password);
+      if (!passwordMatches) {
+        throw new UnauthorizedException('Mật khẩu không chính xác');
+      }
+
+      const tokens = await this.generateUserTokens(
+        user._id,
+        user.email,
+        user.name,
+        user.phone,
+      );
+
+      const cacheKey = `user_${user._id}`;
+      return {
+        accessToken: tokens.accessToken,
+        message: 'Đăng nhập thành công',
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Đã xảy ra lỗi khi đăng nhập');
+    }
+  }
+
+
+  async generateUserTokens(userId, email, name, phone) {
+    try {
+      const accessToken = this.jwtService.sign({
+        userId,
+        email,
+        name,
+        phone,
+      });
+      return {
+        accessToken,
+      };
+    } catch (error) {
+      throw new InternalServerErrorException('Không thể tạo token truy cập');
     }
   }
 

@@ -1,7 +1,10 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UpdateAuthDto } from './dto/update-auth.dto';
-import { SignUpDto } from './dto/create-auth.dto';
+import { SignUpDto } from './dto/signupdto';
+import { LoginDto } from './dto/logindto';
+import { isNumber, isString } from 'class-validator';
+import { LoginData } from './schema/login.schema';
 
 @Controller('auth')
 export class AuthController {
@@ -10,6 +13,29 @@ export class AuthController {
   @Post("register")
   async registerUser(@Body() signUpData: SignUpDto) {
     return this.authService.registerUser(signUpData);
+  }
+
+  @Post("login")
+  async login(@Body() loginDto:LoginDto){
+    
+    const isPhone = /^\d{10,11}$/.test(loginDto.emailOrPhone);
+
+    if (isPhone){
+      const loginData: LoginData = {
+        email:"",
+        phone: loginDto.emailOrPhone,
+        password: loginDto.password,
+      };
+      return this.authService.loginAsPhone(loginData)
+    }
+    else{
+      const loginData: LoginData = {
+          email:loginDto.emailOrPhone,
+          phone:"",
+          password:loginDto.password
+      }
+      return this.authService.loginAsEmail(loginData)
+    }
   }
 
   @Get()
