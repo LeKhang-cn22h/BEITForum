@@ -9,7 +9,7 @@ import {
 import { Model } from 'mongoose';
 import { SignUpDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
-import { User } from './schema/user.schema';
+import { User,UserSchema } from './schema/user.schema';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 
@@ -21,18 +21,38 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async registerUser(SignUpData:SignUpDto): Promise<any> {
+  async registerUser(signUpData: SignUpDto) {
     try {
-      const { email, password, name, phone } = SignUpData;
-      const existingUser = await this.userModel.findOne({ email });
-      if (existingUser) throw new Error('Email đã được sử dụng');
+      const { email, password, name, phone } = signUpData;
 
-      const hashed = await bcrypt.hash(password, 10);
-      const user = new this.userModel({ email, phone, name, password: hashed });
-      await user.save();
-      return { message: 'User registered successfully' };
+      let user =
+        (await this.userModel.findOne({ email }));
+
+      if (user) {
+        throw new UnauthorizedException('Email đã được sử dụng');
+      }
+
+      let validPhone =
+        (await this.userModel.findOne({ phone }));
+
+      if (validPhone) {
+        throw new UnauthorizedException('Số điện thoại đã được sử dụng');
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      await this.userModel.create({
+        email,
+        password: hashedPassword,
+        name,
+        phone
+      });
+
+      return {
+        message: 'Tạo tài khoản thành công',
+      };
     } catch (error) {
-        throw new InternalServerErrorException('Đã xảy ra lỗi khi đăng ký tài khoản');
+      throw new InternalServerErrorException('Đã xảy ra lỗi khi đăng ký tài khoản: '+error);
     }
   }
 
