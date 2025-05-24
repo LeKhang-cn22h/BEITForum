@@ -26,7 +26,7 @@ export class AuthService {
 
   async registerUser(signUpData: SignUpDto) {
     try {
-      const { email, password, name, phone } = signUpData;
+      const { name, phone, email, password, } = signUpData;
     
       let user = await this.userModel.findOne({ email });
       if (user) {
