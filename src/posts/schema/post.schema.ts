@@ -5,40 +5,40 @@ import mongoose, { Document, Types } from 'mongoose';
 @Schema()
 export class Posts {
     @IsString()
-    @Prop({ unique: true, required: true })
+    @Prop({ required: true,unique:false })
     userId: string;
 
     @IsString()
-    @Prop({ unique: true, required: false })
+    @Prop({ required: false })
     title: string;
 
     @IsString()
-    @Prop({ unique: true, required: true })
+    @Prop({  required: true })
     content: string;
 
     @IsString()
-    @Prop({ unique: true, required: true })
+    @Prop({  required: true })
     imageUrl: string;
 
     @IsArray()
     @ArrayNotEmpty()
     @IsString({ each: true })
+    @Prop({ required: true })
     tags: string[];
+    
 
     @IsOptional()
-    @IsBoolean()
-    @Prop({ unique: true, required: true })
-    isPublished?: boolean;
+    @IsString()
+    @Prop({  required: true })
+    isPublished?: string;
 
-    @Prop({ type: [String], default: [] })
-    upvotes: string[];
-
-    @Prop({ type: [String], default: [] })
-    downvotes: string[];
-
-
-    @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment' }] })
-    comments: Types.ObjectId[];
+    @Prop({ default: 0 })
+    totalUpvotes: number;
+    
+    @Prop({ default: 0 })
+    totalDownvotes: number;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export const PostsSchema = SchemaFactory.createForClass(Posts);

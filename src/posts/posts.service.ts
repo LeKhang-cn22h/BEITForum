@@ -6,11 +6,14 @@ import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { VoteDto } from './dto/vote.dto';
 import { Types } from 'mongoose';
+import { GetPostDto } from './dto/get-post.dto';
+import { Vote } from 'src/vote/schema/vote.schema';
 
 @Injectable()
 export class PostsService {
   constructor(
     @InjectModel(Posts.name) private PostsModel: Model<Posts>,
+    @InjectModel(Vote.name) private VoteModel: Model<Vote>,
   ) {}
   async createNewPost(createPostDto: CreatePostDto) {
     try {
@@ -24,10 +27,12 @@ export class PostsService {
       tags,
       isPublished,
     });
-    // Save the new post to the database
-    
+    const savedPost = await newPost.save();
+     // Initialize votes for the new post
+     await this.initializeVotes(savedPost._id.toString());
 
-    return await newPost.save();
+    return await savedPost
+   
     } catch (error) {
       console.error('Error creating new post:', error);
       throw new Error('Failed to create new post');
@@ -35,77 +40,115 @@ export class PostsService {
     
   }
 
-  async votes(postId: string, { userId, type }: VoteDto){
+ 
+ private async  initializeVotes(postId: string) {
     try {
-      const post = await this.PostsModel.findById(postId);
-      if (!post) {
+      const upvoteRecord = new this.VoteModel({
+        postId,
+        type: 'upvote',
+        userId: [], 
+        total: 0
+      });
+
+      const downvoteRecord = new this.VoteModel({
+        postId,
+        type: 'downvote',  
+        userId: [], 
+        total: 0
+      });
+
+      await Promise.all([
+        upvoteRecord.save(),
+        downvoteRecord.save()
+      ]);
+
+      console.log(`Initialized votes for post ${postId}`);
+    } catch (error) {
+      console.error('Error initializing votes:', error);
+      throw new Error('Failed to initialize votes');
+      
+    }
+ 
+  }
+  async searchPosts(getPostDto: GetPostDto) {
+    try {
+      const { userId, title, tags, page = 5, limit = 5 } = getPostDto;
+  
+      const query: any = {};
+  
+      if (userId) {
+        query.userId = userId;
+      }
+  
+      if (title) {
+        query.title = { $regex: title, $options: 'i' };
+      }
+  
+      if (tags && tags.length > 0) {
+        query.tags = { $in: tags };
+      }
+  
+      const skip = (page - 1) * limit;
+  
+      const [posts, total] = await Promise.all([
+        this.PostsModel.find(query)
+          .populate('userId')
+          .skip(skip)
+          .limit(limit)
+          .sort({ createdAt: -1 })
+          .exec(),
+        this.PostsModel.countDocuments(query)
+      ]);
+  
+      return {
+        posts,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      };
+    } catch (error) {
+      console.error('Error searching posts:', error);
+      throw new Error('Failed to search posts');
+    }
+  }
+  
+  
+  
+
+  async updatePost(postId: string, updateData: Partial<CreatePostDto>) {
+    try {
+      const updatedPost = await this.PostsModel.findByIdAndUpdate(
+        postId,
+        updateData,
+        { new: true }
+      );
+  
+      if (!updatedPost) {
         throw new Error('Post not found');
       }
-      const hasUpvoted = post.upvotes.includes(userId);
-      // check xem da upvote chua
-    
-      const hasDownvoted = post.downvotes.includes(userId);
-        // check xem da downvote chua
-      if (type === 'upvote') {
-        // Neu la upvote
-        
-        if (hasUpvoted) {
-          // Neu da upvote roi thi xoa khoi danh sach upvotes
-          post.upvotes = post.upvotes.filter(id => id !== userId);
-        } else {
-          // Neu chua upvote thi them vao danh sach upvotes
-          post.upvotes.push(userId);
-          if (hasDownvoted) {
-            post.downvotes = post.downvotes.filter(id => id !== userId);
-          }
-        }
-      } else if (type === 'downvote') {
-        // Neu la downvote
-        if (hasDownvoted) {
-          // Neu da downvote roi thi xoa khoi danh sach downvotes
-          post.downvotes = post.downvotes.filter(id => id !== userId);
-        } else {
-          // Neu chua downvote thi them vao danh sach downvotes
-          post.downvotes.push(userId);
-          if (hasUpvoted) {
-            post.upvotes = post.upvotes.filter(id => id !== userId);
-          }
-        }
-        
-      } else {
-        throw new Error('Invalid vote type');
-      }
-      post.save();
-      return {
-        upvotes: post.upvotes.length,
-        downvotes: post.downvotes.length,
-      };
-      
+  
+      return updatedPost;
     } catch (error) {
-      console.error('Error processing votes:', error);
-      throw new Error('Failed to process votes');
-      
+      console.error('Error updating post:', error);
+      throw new Error('Failed to update post');
     }
   }
-  async findById(userId?: string) {
+  
+
+  async deletePost(postId: string) {
     try {
-      const posts = await this.PostsModel.find().populate('userId').exec();
-      return posts;
+      const deletedPost = await this.PostsModel.findByIdAndDelete(postId);
+  
+      if (!deletedPost) {
+        throw new Error('Post not found');
+      }
+  
+      return { success: true, message: 'Post deleted successfully' };
     } catch (error) {
-      console.error('Error fetching posts:', error);
-      throw new Error('Failed to fetch posts');
+      console.error('Error deleting post:', error);
+      throw new Error('Failed to delete post');
     }
   }
-
-  findOne(id: number) {
-    return `This action returns a #${id} post`;
-  }
-
-  update(id: number, updatePostDto: UpdatePostDto) {
-    return `This action updates a #${id} post`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} post`;
-  }
+  
 }
