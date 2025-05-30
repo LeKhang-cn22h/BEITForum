@@ -13,6 +13,7 @@ import {
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
+import { CreateReplyDto } from './dto/create-reply.dto';
 
 @Controller('comments')
 export class CommentsController {
@@ -56,5 +57,13 @@ export class CommentsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string) {
     await this.commentsService.remove(id); 
+  }
+  // EndPoint For Reply Comment
+  @Post('reply')
+  @HttpCode(HttpStatus.CREATED)
+  async createReply(
+    @Body() createReplyDto: CreateReplyDto
+  ) {
+    return await this.commentsService.createReply(createReplyDto);
   }
 }
