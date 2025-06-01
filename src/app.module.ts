@@ -7,15 +7,12 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { PostsModule } from './posts/posts.module';
 import { CommentsModule } from './comments/comments.module';
-<<<<<<< HEAD
 import { ReportAccountModule } from './report-account/report-account.module';
 import { ReportPostModule } from './report-post/report-post.module';
 
-=======
 import { VoteModule } from './vote/vote.module';
 import { UserModule } from './user/user.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
->>>>>>> 05def0602a3b33c49e742a0977a2c72044632514
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -38,11 +35,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
       },
       inject: [ConfigService],
     }), 
-<<<<<<< HEAD
-    AuthModule, PostsModule, CommentsModule, ReportAccountModule, ReportPostModule
-=======
-    AuthModule, PostsModule, CommentsModule, UserModule, CloudinaryModule
->>>>>>> 05def0602a3b33c49e742a0977a2c72044632514
+    AuthModule, PostsModule, CommentsModule, ReportAccountModule, ReportPostModule, UserModule, CloudinaryModule
   ],
   controllers: [AppController],
   providers: [AppService],
