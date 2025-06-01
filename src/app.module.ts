@@ -11,12 +11,13 @@ import { ReportAccountModule } from './report-account/report-account.module';
 import { ReportPostModule } from './report-post/report-post.module';
 
 import { VoteModule } from './vote/vote.module';
+import { NewsModule } from './news/news.module';
 import { UserModule } from './user/user.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true
+      isGlobal: true,
     }),
     JwtModule.registerAsync({
       global: true,
@@ -31,14 +32,15 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
         const uri = configService.get<string>('MONGO_URI');
-        return {uri};
+        return { uri };
       },
       inject: [ConfigService],
+
     }), 
     AuthModule, PostsModule, CommentsModule, ReportAccountModule, ReportPostModule, UserModule, CloudinaryModule
+
   ],
   controllers: [AppController],
   providers: [AppService],
-
 })
 export class AppModule {}
