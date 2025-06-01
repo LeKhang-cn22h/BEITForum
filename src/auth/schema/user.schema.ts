@@ -13,10 +13,52 @@ export class User {
 
   @Prop({ required: true, unique: true })
   phone: string;
+
   @Prop({ required: true })
   password: string;
 
-  role:string;
+  @Prop({ required: false, unique: false, default:User.name})
+  username: string;
+  
+  @Prop({ required: false, unique: false, default:"https://static.vecteezy.com/system/resources/previews/009/292/244/non_2x/default-avatar-icon-of-social-media-user-vector.jpg"})
+  avatar: string;
+  
+  @Prop({ required: false, unique: false,default:''})
+  introduce: string;
+  
+  @Prop({ required: false, unique: false,default:0})
+  totalPost: number;
+  
+  @Prop({ required: false, unique: false,default:0})
+  totalComment: number;
+  
+  @Prop({ required: false, unique: false,default:[]})
+  certificate: Certificate[];
+  
+  @Prop({ required: false, unique: false,default:false})
+  isBanned: boolean;
+  
+  @Prop({ required: false, unique: false,default:[]})
+  skill: Skill[];
+  
+  @Prop({ required: false, unique: false, default:"User"})
+  role:String;
+}
+
+@Schema()
+export class Certificate{
+  @Prop({ required: false, unique: false})
+  _id: string;
+  @Prop({ required: false, unique: false})
+  name: string
+}
+
+@Schema()
+export class Skill{
+  @Prop({ required: false, unique: false})
+  _id: string;
+  @Prop({ required: false, unique: false})
+  name: string
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

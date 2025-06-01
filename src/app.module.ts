@@ -7,16 +7,21 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { PostsModule } from './posts/posts.module';
 import { CommentsModule } from './comments/comments.module';
-
+import { UserModule } from './user/user.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true
     }),
-    JwtModule.register({
-      global: true, 
-      secret: "secretKey",
-      signOptions: { expiresIn: '1d' },
+    JwtModule.registerAsync({
+      global: true,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (config: ConfigService) => ({
+        secret: config.get<string>('JWT_SECRET'),
+        expiresIn: '7d',
+      }),
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
@@ -26,7 +31,7 @@ import { CommentsModule } from './comments/comments.module';
       },
       inject: [ConfigService],
     }), 
-    AuthModule, PostsModule, CommentsModule
+    AuthModule, PostsModule, CommentsModule, UserModule, CloudinaryModule
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -10,11 +10,11 @@ import {
 import { Model } from 'mongoose';
 import { SignUpDto } from './dto/signupdto';
 import { LoginData } from './schema/login.schema';
-import { UpdateAuthDto } from './dto/update-auth.dto';
-import { User,UserSchema } from './schema/user.schema';
+import { User } from './schema/user.schema';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { error } from 'console';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +22,8 @@ export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private jwtService: JwtService,
+    private configService: ConfigService,
+
   ) {}
 
   async registerUser(signUpData: SignUpDto) {
@@ -100,18 +102,23 @@ export class AuthService {
 
   async loginAsEmail(loginData:LoginData){
     try {
+      console.log("Dang nhap nhu email")
+
       const { email, password } = loginData;
       let user =
         await this.userModel.findOne({ email});
+      console.log("Da tim theo email")
 
       if (!user) {
         throw new UnauthorizedException('Không tìm thấy người dùng: '+email+" "+password);
       }
+      console.log("Co tk co email")
 
       const passwordMatches = await bcrypt.compare(password, user.password);
       if (!passwordMatches) {
         throw new UnauthorizedException('Mật khẩu không chính xác');
       }
+      console.log("dung mat khau")
 
       const tokens = await this.generateUserTokens(
         user._id,
@@ -119,50 +126,34 @@ export class AuthService {
         user.name,
         user.phone,
       );
+            console.log("Da tao token")
 
-      const cacheKey = `user_${user._id}`;
       return {
         accessToken: tokens.accessToken,
         message: 'Đăng nhập thành công',
       };
-    } catch (error) {
+      } catch (error) {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
-      throw new InternalServerErrorException('Đã xảy ra lỗi khi đăng nhập');
+      throw new InternalServerErrorException('Đã xảy ra lỗi khi đăng nhập: ' + error.message);
     }
+
   }
 
 
   async generateUserTokens(userId, email, name, phone) {
     try {
-      const accessToken = this.jwtService.sign({
-        userId,
-        email,
-        name,
-        phone,
-      });
-      return {
-        accessToken,
-      };
+      const secret = this.configService.get<string>('JWT_SECRET');
+      console.log('>> JWT SECRET =', secret);
+      const accessToken = this.jwtService.sign(
+        { userId, email, name, phone },
+        { secret }, // 👈 truyền secret trực tiếp để test
+      );
+      return { accessToken }; // ✅ trả về object có accessToken
     } catch (error) {
       throw new InternalServerErrorException('Không thể tạo token truy cập');
     }
   }
 
-  findAll() {
-    return `This action returns all auth`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
-
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
-  }
 }
