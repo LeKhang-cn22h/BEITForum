@@ -41,7 +41,7 @@ export class AuthService {
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
-      const role =1;
+      const role =signUpData.role;
       await this.userModel.create({
         email,
         password: hashedPassword,
@@ -84,6 +84,7 @@ export class AuthService {
         user.email,
         user.name,
         user.phone,
+        user.role
       );
 
       const cacheKey = `user_${user._id}`;
@@ -125,6 +126,7 @@ export class AuthService {
         user.email,
         user.name,
         user.phone,
+        user.role
       );
             console.log("Da tao token")
 
@@ -142,12 +144,12 @@ export class AuthService {
   }
 
 
-  async generateUserTokens(userId, email, name, phone) {
+  async generateUserTokens(userId, email, name, phone, role) {
     try {
       const secret = this.configService.get<string>('JWT_SECRET');
       console.log('>> JWT SECRET =', secret);
       const accessToken = this.jwtService.sign(
-        { userId, email, name, phone },
+        { userId, email, name, phone,role },
         { secret }, // 👈 truyền secret trực tiếp để test
       );
       return { accessToken }; // ✅ trả về object có accessToken

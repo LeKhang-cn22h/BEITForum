@@ -1,5 +1,6 @@
 import { IsEmail, IsOptional, IsNumberString, IsString, Matches, MinLength } from "class-validator";
 
+import { Prop } from '@nestjs/mongoose';
 
 export class SignUpDto {
     @IsString()
@@ -17,4 +18,6 @@ export class SignUpDto {
     @Matches(/^(?=.*[0-9])/,{ message: 'password must contain at least one number'})
     password: string;
 
+    @Prop({ required: false, unique: false, default:"user"})
+    role:String;
 }

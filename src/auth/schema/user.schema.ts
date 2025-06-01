@@ -41,7 +41,7 @@ export class User {
   @Prop({ required: false, unique: false,default:[]})
   skill: Skill[];
   
-  @Prop({ required: false, unique: false, default:"User"})
+  @Prop({ required: false, unique: false, default:"user"})
   role:String;
 }
 
