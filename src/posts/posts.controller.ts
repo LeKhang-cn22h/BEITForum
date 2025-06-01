@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -6,6 +6,8 @@ import { VoteDto } from './dto/vote.dto';
 import { Posts } from './schema/post.schema';
 import { HttpCode } from '@nestjs/common';
 import { UseGuards } from '@nestjs/common';
+import { get } from 'mongoose';
+import { GetPostDto } from './dto/get-post.dto';
 
 @Controller('posts')
 
@@ -26,21 +28,24 @@ export class PostsController {
     @Body() voteDto: VoteDto,
   ) {
     console.log(voteDto);
-    return this.postsService.votes(postId, voteDto);
+    //return this.postsService.votes(postId, voteDto);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.postsService.findOne(+id);
+  @Get()
+  @HttpCode(200)
+  async getPosts(@Body() getPostDto: GetPostDto) {
+    return this.postsService.searchPosts(getPostDto)
   }
 
   @Patch(':id')
+  @HttpCode(HttpStatus.OK) 
   update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
-    return this.postsService.update(+id, updatePostDto);
+    return this.postsService.updatePost(id, updatePostDto); 
   }
 
   @Delete(':id')
+  @HttpCode(HttpStatus.OK) 
   remove(@Param('id') id: string) {
-    return this.postsService.remove(+id);
+    return this.postsService.deletePost(id); 
   }
 }
