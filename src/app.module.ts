@@ -7,6 +7,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { PostsModule } from './posts/posts.module';
 import { CommentsModule } from './comments/comments.module';
+import { ReportAccountModule } from './report-account/report-account.module';
+import { ReportPostModule } from './report-post/report-post.module';
 
 @Module({
   imports: [
@@ -26,7 +28,7 @@ import { CommentsModule } from './comments/comments.module';
       },
       inject: [ConfigService],
     }), 
-    AuthModule, PostsModule, CommentsModule
+    AuthModule, PostsModule, CommentsModule, ReportAccountModule, ReportPostModule
   ],
   controllers: [AppController],
   providers: [AppService],
