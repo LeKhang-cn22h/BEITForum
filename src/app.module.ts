@@ -8,6 +8,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PostsModule } from './posts/posts.module';
 import { CommentsModule } from './comments/comments.module';
 import { VoteModule } from './vote/vote.module';
+import { NewsModule } from './news/news.module';
 
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { VoteModule } from './vote/vote.module';
       },
       inject: [ConfigService],
     }), 
-    AuthModule, PostsModule, CommentsModule, VoteModule
+    AuthModule, PostsModule, CommentsModule, VoteModule, NewsModule
   ],
   controllers: [AppController],
   providers: [AppService],
