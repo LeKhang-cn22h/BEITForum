@@ -2,34 +2,33 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { IsEmail, IsOptional, IsNumberString, IsString, Matches, MinLength, ArrayNotEmpty, IsArray, IsBoolean, isNumber, isNumberString } from "class-validator";
 import mongoose, { Document, Types } from 'mongoose';
 
-@Schema()
+@Schema({ timestamps: true })
 export class Posts {
     @IsString()
-    @Prop({ required: true,unique:false })
-    userId: string;
-
+    @Prop({ type: Types.ObjectId, ref: 'User', required: true, unique: false })
+    userId: Types.ObjectId;
     @IsString()
-    @Prop({ required: false })
+    @Prop({ required: false,unique:false })
     title: string;
 
     @IsString()
-    @Prop({  required: true })
+    @Prop({  required: true,unique:false })
     content: string;
 
     @IsString()
-    @Prop({  required: true })
+    @Prop({  required: true,unique:false })
     imageUrl: string;
 
     @IsArray()
     @ArrayNotEmpty()
     @IsString({ each: true })
-    @Prop({ required: true })
+    @Prop({ required: true ,unique:false})
     tags: string[];
     
 
     @IsOptional()
     @IsString()
-    @Prop({  required: true })
+    @Prop({  required: true,unique:false })
     isPublished?: string;
 
     @Prop({ default: 0 })
@@ -37,6 +36,7 @@ export class Posts {
     
     @Prop({ default: 0 })
     totalDownvotes: number;
+
     createdAt: Date;
     updatedAt: Date;
 }

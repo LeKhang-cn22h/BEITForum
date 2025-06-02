@@ -31,7 +31,7 @@ export class PostsController {
     //return this.postsService.votes(postId, voteDto);
   }
 
-  @Get()
+  @Post("search")
   @HttpCode(200)
   async getPosts(@Body() getPostDto: GetPostDto) {
     return this.postsService.searchPosts(getPostDto)

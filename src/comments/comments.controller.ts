@@ -66,4 +66,25 @@ export class CommentsController {
   ) {
     return await this.commentsService.createReply(createReplyDto);
   }
+  @Get('reply/:commentId')
+  async getRepliesByComment(
+    @Param('commentId') commentId: string,
+    @Query('page') page = '1',
+    @Query('limit') limit = '10' ){
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    return await this.commentsService.getRepliesByCommentId(commentId, pageNum, limitNum);
+    }
+  @Patch('reply/:id')
+  async updateReply(
+    @Param('id') id: string, 
+    @Body() updateReplyDto: CreateReplyDto
+  ) {
+    return await this.commentsService.updateReply(id, updateReplyDto);
+  }
+  @Delete('reply/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async removeReply(@Param('id') id: string) {
+    await this.commentsService.removeReply(id);
+  }
 }

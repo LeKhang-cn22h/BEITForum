@@ -7,6 +7,7 @@ import { Model } from 'mongoose';
 import { Comment, CommentSchema } from './schema/comment.schema';
 import { ReplyComment } from './schema/reply.schema';
 import { CreateReplyDto } from './dto/create-reply.dto';
+import { UpdateReplyDto } from './dto/update-reply.dto';
 @Injectable()
 export class CommentsService {
    constructor(
@@ -76,7 +77,8 @@ async findByPost(postId: string, page = 1, limit = 5) {
       comments: comments.map(comment => ({
         content: comment.content,
         userId: comment.userId,
-        time:comment.createdAt
+        time:comment.createdAt,
+        id : comment._id.toString()
       })),
       total,
       page,
@@ -139,6 +141,7 @@ async findByPost(postId: string, page = 1, limit = 5) {
    async createReply(createReplyDto : CreateReplyDto) {
 
     try {
+      console.log(createReplyDto)
       const {userId, commentId, content} = createReplyDto;
       const newReply =
         {
@@ -154,5 +157,67 @@ async findByPost(postId: string, page = 1, limit = 5) {
       throw new Error('Failed to create reply');
     }
    }
-   
+   // Lay danh sach reply theo commentId
+    async getRepliesByCommentId(commentId: string, page = 1, limit = 5) {
+    try {
+      const skip = (page - 1) * limit;
+
+      const replies = await this.ReplyCommentModel.find({ commentId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec();
+
+      const total = await this.ReplyCommentModel.countDocuments({ commentId });
+
+      return {
+        replies: replies.map(reply => ({
+          content: reply.content,
+          userId: reply.userId,
+          time: reply.createdAt
+        })),
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      };
+    } catch (error) {
+      console.error('Error fetching replies by comment:', error);
+      throw new Error('Failed to fetch replies for comment');
+    }}
+    // sua reply
+  async updateReply(id: string, updateReplyDto: UpdateReplyDto) {
+    try {
+      const updatedReply = await this.ReplyCommentModel
+        .findByIdAndUpdate(id, updateReplyDto, { new: true })
+        .exec();
+      if (!updatedReply) {
+        throw new NotFoundException(`Reply with ID ${id} not found`);
+      }
+      return updatedReply;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Error updating reply:', error);
+      throw new Error('Failed to update reply');
+    }}
+   // xoa reply
+  async removeReply(id: string) {
+    try {
+      const deletedReply = await this.ReplyCommentModel.findByIdAndDelete(id).exec();
+      
+      if (!deletedReply) {
+        throw new NotFoundException(`Reply with ID ${id} not found`);
+      }
+      
+      return { message: 'Reply deleted successfully', deletedReply };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      console.error('Error deleting reply:', error);
+      throw new Error('Failed to delete reply');
+    }
+  }
 }

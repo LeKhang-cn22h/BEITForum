@@ -38,6 +38,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
     CommentsModule,
     UserModule,
     CloudinaryModule,
+    VoteModule
   ],
   controllers: [AppController],
   providers: [AppService],
