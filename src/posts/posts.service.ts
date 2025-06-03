@@ -8,12 +8,14 @@ import { VoteDto } from './dto/vote.dto';
 import { Types } from 'mongoose';
 import { GetPostDto } from './dto/get-post.dto';
 import { Vote } from 'src/vote/schema/vote.schema';
+import { User } from 'src/auth/schema/user.schema';
 
 @Injectable()
 export class PostsService {
   constructor(
     @InjectModel(Posts.name) private PostsModel: Model<Posts>,
     @InjectModel(Vote.name) private VoteModel: Model<Vote>,
+    @InjectModel(User.name) private UserModel: Model<User>,
   ) {}
   async createNewPost(createPostDto: CreatePostDto) {
     try {
@@ -84,6 +86,34 @@ export class PostsService {
       const skip = (page - 1) * limit;
 
       const [posts, total] = await Promise.all([
+        this.PostsModel.aggregate([
+          { $match: query },
+          { $sort: { createdAt: -1, _id: -1 } },
+          { $skip: skip },
+          { $limit: limit },
+      
+
+          {
+            $addFields: {
+              userIdObj: { $toObjectId: "$userId" }
+            }
+          },
+          {
+            $lookup: {
+              from: "users",
+              localField: "userIdObj",
+              foreignField: "_id",
+              as: "user"
+            }
+          },
+          {
+            $addFields: {
+              userName: { $arrayElemAt: ["$user.name", 0] }
+            }
+          },
+          { $project: { user: 0, userIdObj: 0 } }
+        ]),
+        this.PostsModel.countDocuments(query)
         this.PostsModel.find(query)
           .populate('userId')
           .skip(skip)
@@ -94,7 +124,7 @@ export class PostsService {
       ]);
 
       return {
-        posts,
+        posts,       
         total,
         page,
         limit,
