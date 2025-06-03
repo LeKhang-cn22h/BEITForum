@@ -18,6 +18,7 @@ export class PostsController {
   @HttpCode(201)
   async create(@Body() createPostDto: CreatePostDto) {
     console.log(createPostDto);
+    const res  = await this.postsService.createNewPost(createPostDto);
     return this.postsService.createNewPost(createPostDto);
   }
 

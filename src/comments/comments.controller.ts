@@ -22,7 +22,11 @@ export class CommentsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createCommentDto: CreateCommentDto) {
-    return await this.commentsService.create(createCommentDto);
+    const res =  await this.commentsService.create(createCommentDto);
+    return {
+      statusCode: HttpStatus.CREATED,
+      message: 'Comment created successfully',
+    };
   }
 
 

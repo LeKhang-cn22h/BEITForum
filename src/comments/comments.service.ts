@@ -65,11 +65,37 @@ async findByPost(postId: string, page = 1, limit = 5) {
   try {
     const skip = (page - 1) * limit;
 
-    const comments = await this.CommentModel.find({ postId })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .exec();
+    const comments = await this.CommentModel.aggregate([
+      { $match: { postId } },
+      { $sort: { createdAt: -1, _id: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $addFields: {
+          userIdObj: { $toObjectId: "$userId" }
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "userIdObj",
+          foreignField: "_id",
+          as: "user"
+        }
+      },
+      {
+        $addFields: {
+          userName: { $arrayElemAt: ["$user.name", 0] },
+          avatar: { $arrayElemAt: ["$user.avatar", 0] }
+        }
+      },
+      {
+        $project: {
+          user: 0,
+          userIdObj: 0
+        }
+      }
+    ]);
 
     const total = await this.CommentModel.countDocuments({ postId });
 
@@ -77,8 +103,11 @@ async findByPost(postId: string, page = 1, limit = 5) {
       comments: comments.map(comment => ({
         content: comment.content,
         userId: comment.userId,
-        time:comment.createdAt,
-        id : comment._id.toString()
+        userName: comment.userName,
+        avatar: comment.avatar,
+        time: comment.createdAt,
+        id: comment._id.toString(),
+        totalReply: comment.totalReply
       })),
       total,
       page,
@@ -151,30 +180,63 @@ async findByPost(postId: string, page = 1, limit = 5) {
       }
       
       const result =  await this.ReplyCommentModel.create(newReply);
-      return {result,message: 'Reply created successfully'};
+      const comment = await this.CommentModel.findById(commentId)
+      if (comment && typeof comment.totalReply === 'number') {
+        comment.totalReply++;
+      }// tang so luong reply
+      await comment?.save();
+      return {statusCode : 201,message: 'Reply created successfully'};
     } catch (error) {
       console.error('Error creating reply:', error);
       throw new Error('Failed to create reply');
     }
    }
    // Lay danh sach reply theo commentId
-    async getRepliesByCommentId(commentId: string, page = 1, limit = 5) {
+   async getRepliesByCommentId(commentId: string, page = 1, limit = 5) {
     try {
       const skip = (page - 1) * limit;
-
-      const replies = await this.ReplyCommentModel.find({ commentId })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .exec();
-
+  
+      const replies = await this.ReplyCommentModel.aggregate([
+        { $match: { commentId } },
+        { $sort: { createdAt: -1, _id: -1 } },
+        { $skip: skip },
+        { $limit: limit },
+        {
+          $addFields: {
+            userIdObj: { $toObjectId: "$userId" }
+          }
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "userIdObj",
+            foreignField: "_id",
+            as: "user"
+          }
+        },
+        {
+          $addFields: {
+            userName: { $arrayElemAt: ["$user.name", 0] },
+            avatar: { $arrayElemAt: ["$user.avatar", 0] }
+          }
+        },
+        {
+          $project: {
+            user: 0,
+            userIdObj: 0
+          }
+        }
+      ]);
+  
       const total = await this.ReplyCommentModel.countDocuments({ commentId });
-
+  
       return {
         replies: replies.map(reply => ({
           content: reply.content,
           userId: reply.userId,
-          time: reply.createdAt
+          userName: reply.userName,
+          avatar: reply.avatar,
+          time: reply.createdAt,
         })),
         total,
         page,
@@ -184,7 +246,8 @@ async findByPost(postId: string, page = 1, limit = 5) {
     } catch (error) {
       console.error('Error fetching replies by comment:', error);
       throw new Error('Failed to fetch replies for comment');
-    }}
+    }
+  }
     // sua reply
   async updateReply(id: string, updateReplyDto: UpdateReplyDto) {
     try {
