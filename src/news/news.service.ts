@@ -10,10 +10,10 @@ export class NewsService {
   constructor(@InjectModel(News.name) private NewsModel: Model<News>) {}
   async create(createNewsDto: CreateNewsDto) {
     try {
-      const { userId, title, content, img } = createNewsDto;
+      const { adminId, title, content, img } = createNewsDto;
 
       const newNews = new this.NewsModel({
-        userId,
+        adminId,
         title,
         content,
         img,
@@ -29,8 +29,8 @@ export class NewsService {
 
   async findAll() {
     try {
-      const newss = await this.NewsModel.find().exec();
-      return newss;
+      const listNews = await this.NewsModel.find();
+      return { message: 'BE-Đã lấy thành công tin tức', listNews };
     } catch (error) {
       console.error('Error fetching news:', error);
       throw new Error('Failed to fetch news');
@@ -39,16 +39,16 @@ export class NewsService {
 
   async findOne(id: string): Promise<News> {
     try {
-      const post = await this.NewsModel.findById(id).exec();
+      const news = await this.NewsModel.findById(id);
 
-      if (!post) {
+      if (!news) {
         throw new NotFoundException(`News with ID ${id} not found`);
       }
 
-      return post;
+      return news;
     } catch (error) {
-      console.error('Error fetching post:', error);
-      throw new Error('Failed to fetch post');
+      console.error('Error fetching news:', error);
+      throw new Error('Failed to fetch news');
     }
   }
 
@@ -58,7 +58,7 @@ export class NewsService {
 
   async remove(id: string) {
     try {
-      const deleted = await this.NewsModel.findByIdAndDelete(id).exec();
+      const deleted = await this.NewsModel.findByIdAndDelete(id);
 
       if (!deleted) {
         throw new NotFoundException(`News with ID ${id} not found`);
