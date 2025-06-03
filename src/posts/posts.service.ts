@@ -91,30 +91,28 @@ export class PostsService {
           { $sort: { createdAt: -1, _id: -1 } },
           { $skip: skip },
           { $limit: limit },
-      
 
           {
             $addFields: {
-              userIdObj: { $toObjectId: "$userId" }
-            }
+              userIdObj: { $toObjectId: '$userId' },
+            },
           },
           {
             $lookup: {
-              from: "users",
-              localField: "userIdObj",
-              foreignField: "_id",
-              as: "user"
-            }
+              from: 'users',
+              localField: 'userIdObj',
+              foreignField: '_id',
+              as: 'user',
+            },
           },
           {
             $addFields: {
-              userName: { $arrayElemAt: ["$user.name", 0] }
-            }
+              userName: { $arrayElemAt: ['$user.name', 0] },
+            },
           },
-          { $project: { user: 0, userIdObj: 0 } }
+          { $project: { user: 0, userIdObj: 0 } },
         ]),
         this.PostsModel.countDocuments(query)
-        this.PostsModel.find(query)
           .populate('userId')
           .skip(skip)
           .limit(limit)
@@ -124,7 +122,7 @@ export class PostsService {
       ]);
 
       return {
-        posts,       
+        posts,
         total,
         page,
         limit,
