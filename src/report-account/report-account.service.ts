@@ -12,21 +12,20 @@ export class ReportAccountService {
     private reportModel: Model<ReportAccount>,
   ) {}
 
-  async getReportedUsers() {
+ async getReportedUsers() {
   return this.reportModel.aggregate([
     {
       $group: {
-        _id: {
-          $toObjectId: '$reportedUserId', 
-        },
+        _id: '$reportedUserId', 
         reportCount: { $sum: 1 },
+        reportIds: { $push: '$_id' }
       },
     },
     {
       $lookup: {
         from: 'users',
-        localField: '_id', 
-        foreignField: '_id',
+        localField: '_id',      
+        foreignField: '_id',    
         as: 'userInfo',
       },
     },
@@ -43,6 +42,7 @@ export class ReportAccountService {
 }
 
 
+
   async createReport(dto: CreateReportAccountDto) {
     const report = new this.reportModel({
       ...dto,
@@ -53,19 +53,42 @@ export class ReportAccountService {
   }
 
   async getReportById(id: string) {
-    try {
-      const report = await this.reportModel
-        .findById(id)
-        .populate('reportedUserId reporterUserId');
-      if (!report) {
-        throw new NotFoundException('Report not found');
-      }
-      return report;
-    } catch (err) {
-      console.error('getReportById error:', err);
-      throw new NotFoundException('Invalid ID format or not found');
+  try {
+    const report = await this.reportModel
+      .findById(id)
+      .populate({
+        path: 'reportedUserId',
+        select: '_id name email phone isBanned'
+      })
+      .populate({
+        path: 'reporterUserId',
+        select: 'name'
+      });
+
+    if (!report) {
+      throw new NotFoundException('Report not found');
     }
+
+    const reportedUser = report.reportedUserId as any;
+    const reporterUser = report.reporterUserId as any;
+
+    return {
+      _id: report._id,
+      reportedUserId: report.reportedUserId.toString(),
+      reportedUserName: reportedUser.name,
+      email: reportedUser.email,
+      phone: reportedUser.phone,
+      isBanned: reportedUser.isBanned,
+      reporterName: reporterUser.name,
+      reason: report.reason,
+      createdAt: report.createdAt
+    };
+  } catch (err) {
+    console.error('getReportById error:', err);
+    throw new NotFoundException('Invalid ID format or not found');
   }
+}
+
 
   async updateReport(id: string, dto: UpdateReportAccountDto) {
     return this.reportModel.findByIdAndUpdate(id, dto, { new: true });

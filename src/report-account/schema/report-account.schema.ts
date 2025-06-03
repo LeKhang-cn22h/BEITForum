@@ -8,5 +8,16 @@ export class ReportAccount extends Document{
     reporterUserId:Types.ObjectId;
     @Prop({required:true})
     reason:string;
+    @Prop({ default: 'pending' })
+    status: 'pending' | 'approved' | 'rejected' | 'banned';
+
+    @Prop()
+    adminNote?: string;
+     @Prop()
+  createdAt: Date;
+
+  @Prop()
+  updatedAt: Date;
+
 }
 export const ReportAccountSchema=SchemaFactory.createForClass(ReportAccount);

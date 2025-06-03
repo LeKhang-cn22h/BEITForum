@@ -17,10 +17,10 @@ export class ReportAccountController {
     return this.reportAccountService.createReport(createReportDto);
   }
 
-  @Get(':id')
+ @Get(':id')
   getReportById(@Param('id') id: string) {
-    return this.reportAccountService.getReportById(id);
-  }
+  return this.reportAccountService.getReportById(id);
+}
 
   @Patch(':id')
   updateReport(@Param('id') id: string, @Body() dto: UpdateReportAccountDto) {

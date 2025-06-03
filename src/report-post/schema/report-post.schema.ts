@@ -12,6 +12,8 @@ export class ReportPost extends Document {
 
   @Prop({ required: true })
   reason: string;
+  @Prop()
+  createdAt: string;
 }
 
 export const ReportPostSchema = SchemaFactory.createForClass(ReportPost); 
