@@ -2,14 +2,14 @@ import { IsString } from 'class-validator';
 
 export class CreateNewsDto {
   @IsString()
-  userId: String;
+  adminId: string;
 
   @IsString()
-  title: String;
+  title: string;
 
   @IsString()
-  content: String;
+  content: string;
 
   @IsString()
-  img: String;
+  img: string;
 }

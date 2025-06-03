@@ -2,23 +2,25 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { IsString } from 'class-validator';
 import mongoose, { Document, Types } from 'mongoose';
 
-@Schema()
+@Schema({ timestamps: true })
 export class News {
   @IsString()
-  @Prop({ require: true })
-  userId: String;
+  @Prop({ required: true })
+  adminId: string;
 
   @IsString()
-  @Prop({ require: true })
-  title: String;
+  @Prop({ required: true })
+  title: string;
 
   @IsString()
-  @Prop({ require: true })
-  content: String;
+  @Prop({ required: true })
+  content: string;
 
   @IsString()
-  @Prop({ require: true })
-  img: String;
+  @Prop()
+  img: string;
+
+  readonly createdAt: Date;
 }
 
 export const NewsSchema = SchemaFactory.createForClass(News);

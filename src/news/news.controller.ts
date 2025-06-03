@@ -21,19 +21,19 @@ export class NewsController {
     return await this.newsService.create(createNewsDto);
   }
 
-  @Get()
+  @Get('getall')
   async findAll() {
     console.log('Đã lấy ra tất cả tin tức');
     return await this.newsService.findAll();
   }
 
-  @Get(':id')
+  @Get('get/:id')
   async findOne(@Param('id') id: string) {
     console.log('News id: ', id);
     return await this.newsService.findOne(id);
   }
 
-  @Patch(':id')
+  @Patch('update/:id')
   update(@Param('id') id: string, @Body() updateNewsDto: UpdateNewsDto) {
     return this.newsService.update(+id, updateNewsDto);
   }

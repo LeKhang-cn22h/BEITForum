@@ -18,6 +18,7 @@ export class PostsController {
   @HttpCode(201)
   async create(@Body() createPostDto: CreatePostDto) {
     console.log(createPostDto);
+    const res  = await this.postsService.createNewPost(createPostDto);
     return this.postsService.createNewPost(createPostDto);
   }
 
@@ -31,7 +32,7 @@ export class PostsController {
     //return this.postsService.votes(postId, voteDto);
   }
 
-  @Get()
+  @Post("search")
   @HttpCode(200)
   async getPosts(@Body() getPostDto: GetPostDto) {
     return this.postsService.searchPosts(getPostDto)

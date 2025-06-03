@@ -36,8 +36,10 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
       },
       inject: [ConfigService],
 
+
     }), 
-    AuthModule, PostsModule, CommentsModule, ReportAccountModule, ReportPostModule, UserModule, CloudinaryModule
+    AuthModule, PostsModule, CommentsModule, ReportAccountModule, ReportPostModule, UserModule, NewsModule, VoteModule, CloudinaryModule
+
 
   ],
   controllers: [AppController],
