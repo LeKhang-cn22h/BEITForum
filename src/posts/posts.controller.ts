@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  HttpStatus,
+  UseInterceptors,
+  UploadedFiles,
+} from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -8,45 +19,45 @@ import { HttpCode } from '@nestjs/common';
 import { UseGuards } from '@nestjs/common';
 import { get } from 'mongoose';
 import { GetPostDto } from './dto/get-post.dto';
+import { FilesInterceptor } from '@nestjs/platform-express';
 
 @Controller('posts')
-
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
- 
+
   @Post('create')
   @HttpCode(201)
-  async create(@Body() createPostDto: CreatePostDto) {
+  @UseInterceptors(FilesInterceptor('imageUrls')) // 'images' là tên field form-data
+  async create(
+    @Body() createPostDto: CreatePostDto,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
     console.log(createPostDto);
-    const res  = await this.postsService.createNewPost(createPostDto);
-    return this.postsService.createNewPost(createPostDto);
+    return await this.postsService.createNewPost(createPostDto, files);
   }
 
   @Post('vote/:postId')
   @HttpCode(200)
- async vote(
-    @Param('postId') postId: string,
-    @Body() voteDto: VoteDto,
-  ) {
+  async vote(@Param('postId') postId: string, @Body() voteDto: VoteDto) {
     console.log(voteDto);
     //return this.postsService.votes(postId, voteDto);
   }
 
-  @Post("search")
+  @Post('search')
   @HttpCode(200)
   async getPosts(@Body() getPostDto: GetPostDto) {
-    return this.postsService.searchPosts(getPostDto)
+    return this.postsService.searchPosts(getPostDto);
   }
 
   @Patch(':id')
-  @HttpCode(HttpStatus.OK) 
+  @HttpCode(HttpStatus.OK)
   update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
-    return this.postsService.updatePost(id, updatePostDto); 
+    return this.postsService.updatePost(id, updatePostDto);
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.OK) 
+  @HttpCode(HttpStatus.OK)
   remove(@Param('id') id: string) {
-    return this.postsService.deletePost(id); 
+    return this.postsService.deletePost(id);
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { Posts } from './schema/post.schema';
@@ -9,6 +9,7 @@ import { Types } from 'mongoose';
 import { GetPostDto } from './dto/get-post.dto';
 import { Vote } from 'src/vote/schema/vote.schema';
 import { User } from 'src/auth/schema/user.schema';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class PostsService {
@@ -16,25 +17,52 @@ export class PostsService {
     @InjectModel(Posts.name) private PostsModel: Model<Posts>,
     @InjectModel(Vote.name) private VoteModel: Model<Vote>,
     @InjectModel(User.name) private UserModel: Model<User>,
+    private cloudinaryService: CloudinaryService,
   ) {}
-  async createNewPost(createPostDto: CreatePostDto) {
+  async createNewPost(
+    createPostDto: CreatePostDto,
+    files?: Express.Multer.File[],
+  ) {
     try {
-      const { userId, title, content, imageUrl, tags, isPublished } =
+      const createFields: Partial<CreatePostDto> = {};
+
+      // Nếu có file ảnh thì upload lên Cloudinary
+      if (files && files.length > 0) {
+        try {
+          const uploadResults = await Promise.all(
+            files.map((file) =>
+              this.cloudinaryService.uploadFile(createPostDto.userId, file),
+            ),
+          );
+
+          createFields.imageUrls = uploadResults.map(
+            (result) => result.secure_url,
+          );
+
+          console.log('Các ảnh đã tải lên:', createFields.imageUrls);
+        } catch (error) {
+          console.error('Lỗi Cloudinary:', error);
+          throw new BadRequestException('Lỗi khi tải ảnh lên Cloudinary');
+        }
+      }
+
+      const { userId, title, content, imageUrls, tags, isPublished } =
         createPostDto;
 
       const newPost = new this.PostsModel({
         userId,
         title,
         content,
-        imageUrl,
+        imageUrls: createFields.imageUrls || imageUrls,
         tags,
         isPublished,
       });
+
       const savedPost = await newPost.save();
-      // Initialize votes for the new post
+
       await this.initializeVotes(savedPost._id.toString());
 
-      return await { message: 'Tạo post thành công', savedPost };
+      return { message: 'Tạo post thành công', savedPost };
     } catch (error) {
       console.error('Error creating new post:', error);
       throw new Error('Failed to create new post');
