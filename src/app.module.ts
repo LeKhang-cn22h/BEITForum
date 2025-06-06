@@ -14,6 +14,7 @@ import { VoteModule } from './vote/vote.module';
 import { NewsModule } from './news/news.module';
 import { UserModule } from './user/user.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { ComplaintModule } from './complaint/complaint.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -38,7 +39,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 
     }), 
-    AuthModule, PostsModule, CommentsModule, ReportAccountModule, ReportPostModule, UserModule, NewsModule, VoteModule, CloudinaryModule
+    AuthModule, PostsModule, CommentsModule, ReportAccountModule, ReportPostModule, UserModule, NewsModule, VoteModule, CloudinaryModule, ComplaintModule
 
 
   ],
