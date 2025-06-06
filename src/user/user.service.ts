@@ -63,7 +63,7 @@ export class UserService {
     if (!user) {
       throw new NotFoundException('User not found');
     }
-
+    
     const updateFields: Partial<UpdateUserDto> = {};
 
     // Nếu có file avatar thì upload lên Cloudinary, rồi lấy URL lưu vào updateFields.avatar
@@ -93,6 +93,25 @@ export class UserService {
     if (password) {
       const bcrypt = require('bcrypt');
       updateData.password = await bcrypt.hash(password, 10);
+    }
+    if (typeof updateUserDto.skill === 'string') {
+      try {
+        console.log("Sau khi parse skill "+JSON.parse(updateUserDto.skill))
+        updateData.skill = JSON.parse(updateUserDto.skill);
+        console.log(updateData)
+      } catch (err) {
+        throw new BadRequestException('Trường skills không phải là JSON hợp lệ');
+      }
+    }
+
+     if (typeof updateUserDto.certificate === 'string') {
+      try {
+        console.log("Sau khi parse certificate "+JSON.parse(updateUserDto.certificate))
+        updateData.certificate = JSON.parse(updateUserDto.certificate);
+        console.log(updateData)
+      } catch (err) {
+        throw new BadRequestException('Trường Certificate không phải là JSON hợp lệ');
+      }
     }
 
     if (Object.keys(updateData).length > 0) {
