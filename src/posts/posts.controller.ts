@@ -60,4 +60,30 @@ export class PostsController {
   remove(@Param('id') id: string) {
     return this.postsService.deletePost(id);
   }
+
+  @Post('bookmarks/:postId/:userId')
+  @HttpCode(HttpStatus.OK)
+  async bookmarkPost(
+    @Param('postId') postId: string,
+    @Param('userId') userId: string,
+  ) {
+    if (!postId || !userId) {
+      return {
+        message: 'postId và userId là bắt buộc',
+        statusCode: HttpStatus.BAD_REQUEST,
+      };
+    }
+    return this.postsService.setBookmark(postId, userId);
+  }
+  @Get('bookmarks/:userId')
+  @HttpCode(HttpStatus.OK)
+  async getBookmarks(@Param('userId') userId: string) {
+    if (!userId) {
+      return {
+        message: 'userId là bắt buộc',
+        statusCode: HttpStatus.BAD_REQUEST,
+      };
+    }
+    return this.postsService.getBookmarks(userId);
+  }
 }
