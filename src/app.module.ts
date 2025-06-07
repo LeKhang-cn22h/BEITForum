@@ -7,17 +7,17 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { PostsModule } from './posts/posts.module';
 import { CommentsModule } from './comments/comments.module';
-import { ReportAccountModule } from './report-account/report-account.module';
-import { ReportPostModule } from './report-post/report-post.module';
-
 import { VoteModule } from './vote/vote.module';
-import { NewsModule } from './news/news.module';
 import { UserModule } from './user/user.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { ReportAccountModule } from './report-account/report-account.module';
+import { ReportPostModule } from './report-post/report-post.module';
+import { NewsModule } from './news/news.module';
+import { ComplaintModule } from './complaint/complaint.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true,
+      isGlobal: true
     }),
     JwtModule.registerAsync({
       global: true,
@@ -32,17 +32,15 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
         const uri = configService.get<string>('MONGO_URI');
-        return { uri };
+        return {uri};
       },
       inject: [ConfigService],
-
-
     }), 
-    AuthModule, PostsModule, CommentsModule, ReportAccountModule, ReportPostModule, UserModule, NewsModule, VoteModule, CloudinaryModule
 
-
+    AuthModule, PostsModule, CommentsModule, ReportAccountModule, ReportPostModule, UserModule, NewsModule, VoteModule, CloudinaryModule, ComplaintModule
   ],
   controllers: [AppController],
   providers: [AppService],
+
 })
 export class AppModule {}

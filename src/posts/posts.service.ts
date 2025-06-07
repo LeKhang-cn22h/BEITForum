@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { Posts } from './schema/post.schema';
-import { Model } from 'mongoose';
+import { get, Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { VoteDto } from './dto/vote.dto';
 import { Types } from 'mongoose';
@@ -10,6 +10,7 @@ import { GetPostDto } from './dto/get-post.dto';
 import { Vote } from 'src/vote/schema/vote.schema';
 import { User } from 'src/auth/schema/user.schema';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
+import { BookMark } from './schema/bookmark.schema';
 
 @Injectable()
 export class PostsService {
@@ -17,6 +18,7 @@ export class PostsService {
     @InjectModel(Posts.name) private PostsModel: Model<Posts>,
     @InjectModel(Vote.name) private VoteModel: Model<Vote>,
     @InjectModel(User.name) private UserModel: Model<User>,
+    @InjectModel(BookMark.name) private BookMarkModel: Model<BookMark>,
     private cloudinaryService: CloudinaryService,
   ) {}
   async createNewPost(
@@ -95,7 +97,7 @@ export class PostsService {
   }
   async searchPosts(getPostDto: GetPostDto) {
     try {
-      const { userId, title, tags, page = 5, limit = 5 } = getPostDto;
+      const { userId, title, tags, page = 5, limit = 5,postsId } = getPostDto;
 
       const query: any = {};
 
@@ -109,6 +111,9 @@ export class PostsService {
 
       if (tags && tags.length > 0) {
         query.tags = { $in: tags };
+      }
+      if (postsId && postsId.length > 0) {
+        query._id = { $in: postsId.map(id => new Types.ObjectId(id)) };
       }
 
       const skip = (page - 1) * limit;
@@ -141,7 +146,6 @@ export class PostsService {
           { $project: { user: 0, userIdObj: 0 } },
         ]),
         this.PostsModel.countDocuments(query)
-          .populate('userId')
           .skip(skip)
           .limit(limit)
           .sort({ createdAt: -1 })
@@ -195,4 +199,75 @@ export class PostsService {
       throw new Error('Failed to delete post');
     }
   }
+  async hide(postId: string) {
+  try {
+    const post = await this.PostsModel.findByIdAndUpdate(
+      postId,
+      { isHidden: true },
+      { new: true }
+    );
+
+    if (!post) {
+      throw new Error('Post not found');
+    }
+
+    return { success: true, message: 'Post hidden successfully', post };
+  } catch (error) {
+    console.error('Error hiding post:', error);
+    throw new Error('Failed to hide post');
+  }
+}
+  // them bookmark cho post
+  async setBookmark(postId: string, userId: string) {
+    try {
+      const bookmark = await this.BookMarkModel.findOne({ userId });
+      console.log('Bookmark record:', bookmark);
+  
+      if (!bookmark) {
+        // Nếu user chưa có bookmark record, tạo mới
+        await this.BookMarkModel.create({
+          userId: userId,  
+          postId: [postId],
+        });
+        return { message: 'Added to bookmarks' };
+      }
+  
+      const postIndex = bookmark.postId.findIndex(
+        (id) => id === postId,
+      );
+      console.log('Post index in bookmark:', postIndex);
+  
+      if (postIndex > -1) {
+        // Nếu đã bookmark → xóa postId khỏi mảng
+        bookmark.postId.splice(postIndex, 1);
+        await bookmark.save();
+        return { message: 'Removed from bookmarks',isBookmarked: false };
+      } else {
+        // Nếu chưa bookmark → thêm vào mảng
+        bookmark.postId.push(postId);
+        await bookmark.save();
+        return { message: 'Added to bookmarks',isBookmarked: true };
+      }
+    } catch (error) {
+      console.error(error);
+      throw new Error('Failed to update bookmarks');
+    }
+  }
+  // lay danh sach bookmark cua user
+  async getBookmarks(userId: string) {
+    try {
+      const bookmark = await this.BookMarkModel.findOne({ userId });
+  
+    return{
+      postsId : bookmark ? bookmark.postId : [],
+      message: bookmark ? 'Bookmarks retrieved successfully' : 'No bookmarks found',
+    }
+     
+    } catch (error) {
+      console.error('Error getting bookmarks:', error);
+      throw new Error('Failed to get bookmarks');
+    }
+  }
+  
+  
 }

@@ -30,7 +30,7 @@ export class NewsService {
   async findAll() {
     try {
       const listNews = await this.NewsModel.find();
-      return { message: 'BE-Đã lấy thành công tin tức', listNews };
+      return { message: 'BE-Đã lấy thành công tất cả tin tức', listNews };
     } catch (error) {
       console.error('Error fetching news:', error);
       throw new Error('Failed to fetch news');

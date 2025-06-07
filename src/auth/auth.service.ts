@@ -7,7 +7,7 @@ import {
   NotFoundException,
   ConflictException
 } from '@nestjs/common';import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { SignUpDto } from './dto/signupdto';
 import { LoginData } from './schema/login.schema';
 import { User } from './schema/user.schema';
@@ -15,6 +15,7 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { error } from 'console';
 import { ConfigService } from '@nestjs/config';
+import { BookMark } from 'src/posts/schema/bookmark.schema';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +24,7 @@ export class AuthService {
     @InjectModel(User.name) private userModel: Model<User>,
     private jwtService: JwtService,
     private configService: ConfigService,
+     @InjectModel(BookMark.name) private BookMarkModel: Model<BookMark>,
 
   ) {}
 
@@ -42,13 +44,16 @@ export class AuthService {
 
       const hashedPassword = await bcrypt.hash(password, 10);
       const role =signUpData.role;
-      await this.userModel.create({
+      const registedUser  = await this.userModel.create({
         email,
         password: hashedPassword,
         name,
         phone,
         role
       });
+      const savedUser = await registedUser.save();
+      // Khởi tạo bookmark cho người dùng mới
+      await this.initializeBookMark(savedUser._id.toString());
 
       return {
         message: 'Tạo tài khoản thành công',
@@ -157,5 +162,21 @@ export class AuthService {
       throw new InternalServerErrorException('Không thể tạo token truy cập');
     }
   }
+
+  // khoi tao bookmark cho user khi user moi dang ky
+private async initializeBookMark(userId: string) {
+  try {
+    const bookmarkRecord = new this.BookMarkModel({
+      userId: userId,
+      postId: [],
+    });
+    if(bookmarkRecord) {
+      await bookmarkRecord.save();
+    }
+  } catch (error) {
+    console.error('Error initializing bookmark:', error);
+    throw new InternalServerErrorException('Failed to initialize bookmark');
+  }
+}
 
 }

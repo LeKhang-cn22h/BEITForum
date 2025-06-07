@@ -42,14 +42,15 @@ export class Posts {
   @Prop({ required: true, unique: false })
   isPublished?: string;
 
-  @Prop({ default: 0 })
-  totalUpvotes: number;
-
-  @Prop({ default: 0 })
-  totalDownvotes: number;
-
-  createdAt: Date;
-  updatedAt: Date;
+    @Prop({ default: 0 })
+    totalUpvotes: number;
+    
+    @Prop({ default: 0 })
+    totalDownvotes: number;
+    @Prop({ default: false })
+    isHidden: boolean;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 export const PostsSchema = SchemaFactory.createForClass(Posts);

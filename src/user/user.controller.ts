@@ -5,6 +5,7 @@ import { UserDto } from './dto/userdto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Types } from 'mongoose';
+import { BanUserDto } from './dto/ban-user.dto';
 
 @Controller('user')
 export class UserController {
@@ -42,5 +43,12 @@ export class UserController {
     return this.userService.create(createUserDto);
   }
 
+  @Patch('ban/:id')
+  async banUser(
+    @Param('id') id: string,
+    @Body() banDto: BanUserDto
+  ) {
+    return this.userService.banUser(id, banDto.durationInDays);
+  }
 
 }

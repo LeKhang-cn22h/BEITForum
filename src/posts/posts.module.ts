@@ -7,6 +7,7 @@ import { Vote, VoteSchema } from 'src/vote/schema/vote.schema';
 import { UserSchema } from 'src/auth/schema/login.schema';
 import { User } from 'src/auth/schema/user.schema';
 import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
+import { BookMark, BookMarkSchema } from './schema/bookmark.schema';
 
 @Module({
   imports: [
@@ -23,6 +24,9 @@ import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
       {
         name: User.name,
         schema: UserSchema,
+      },{
+        name: BookMark.name,
+        schema: BookMarkSchema,
       },
     ]),
   ],
