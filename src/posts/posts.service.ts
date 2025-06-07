@@ -167,4 +167,22 @@ export class PostsService {
       throw new Error('Failed to delete post');
     }
   }
+  async hide(postId: string) {
+  try {
+    const post = await this.PostsModel.findByIdAndUpdate(
+      postId,
+      { isHidden: true },
+      { new: true }
+    );
+
+    if (!post) {
+      throw new Error('Post not found');
+    }
+
+    return { success: true, message: 'Post hidden successfully', post };
+  } catch (error) {
+    console.error('Error hiding post:', error);
+    throw new Error('Failed to hide post');
+  }
+}
 }

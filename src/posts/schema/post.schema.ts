@@ -36,7 +36,8 @@ export class Posts {
     
     @Prop({ default: 0 })
     totalDownvotes: number;
-
+    @Prop({ default: false })
+    isHidden: boolean;
     createdAt: Date;
     updatedAt: Date;
 }

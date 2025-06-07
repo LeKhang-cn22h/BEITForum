@@ -49,4 +49,9 @@ export class PostsController {
   remove(@Param('id') id: string) {
     return this.postsService.deletePost(id); 
   }
+  @Patch('hide/:id')
+  @HttpCode(HttpStatus.OK)
+  hidePost(@Param('id') postId: string) {
+    return this.postsService.hide(postId);
+  }
 }
