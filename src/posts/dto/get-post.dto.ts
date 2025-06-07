@@ -20,4 +20,8 @@ export class GetPostDto {
     @IsNumber()
     @Min(1)
     limit?: number;
+    @IsString({ each: true })
+    @IsOptional()
+    @IsArray()
+    postsId?: string[];
 }

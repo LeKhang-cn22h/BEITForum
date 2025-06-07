@@ -12,6 +12,8 @@ import { UserModule } from './user/user.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { ReportAccountModule } from './report-account/report-account.module';
 import { ReportPostModule } from './report-post/report-post.module';
+import { NewsModule } from './news/news.module';
+import { ComplaintModule } from './complaint/complaint.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -34,7 +36,8 @@ import { ReportPostModule } from './report-post/report-post.module';
       },
       inject: [ConfigService],
     }), 
-    AuthModule, PostsModule, CommentsModule, UserModule, CloudinaryModule,ReportAccountModule, ReportPostModule
+
+    AuthModule, PostsModule, CommentsModule, ReportAccountModule, ReportPostModule, UserModule, NewsModule, VoteModule, CloudinaryModule, ComplaintModule
   ],
   controllers: [AppController],
   providers: [AppService],
