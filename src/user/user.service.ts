@@ -11,11 +11,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { UserDto } from './dto/userdto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { isValidObjectId, Model, Types } from 'mongoose';
-import { User } from '../auth/schema/user.schema';
+import { User, UserDocument } from '../auth/schema/user.schema';
 import { error } from 'console';
 import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { v2 as cloudinary } from 'cloudinary';
+
 @Injectable()
 export class UserService {
   constructor(
@@ -111,5 +112,23 @@ export class UserService {
     } catch (error) {
       throw new InternalServerErrorException(error.message);
     }
+  }
+  async banUser(id: string, durationInDays: number) {
+    const user = (await this.userModel.findById(id)) as UserDocument;
+    if (!user) throw new NotFoundException('Không tìm thấy user');
+
+    const now = new Date();
+    const bannedUntil = new Date(
+      now.getTime() + durationInDays * 24 * 60 * 60 * 1000,
+    );
+
+    user.isBanned = true;
+    user.bannedUntil = bannedUntil;
+    await user.save();
+
+    return {
+      message: `User bị khóa đến ${bannedUntil.toISOString()}`,
+      bannedUntil,
+    };
   }
 }
