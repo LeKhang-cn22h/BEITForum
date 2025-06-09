@@ -21,17 +21,24 @@ export class PostsService {
   ) {}
   async createNewPost(
     createPostDto: CreatePostDto,
-    files?: Express.Multer.File[],
+    files?: {
+      imageUrls?: Express.Multer.File[];
+      videoUrls?: Express.Multer.File[];
+    },
   ) {
     try {
       const createFields: Partial<CreatePostDto> = {};
 
       // Nếu có file ảnh thì upload lên Cloudinary
-      if (files && files.length > 0) {
+      if (files?.imageUrls && files.imageUrls.length > 0) {
         try {
           const uploadResults = await Promise.all(
-            files.map((file) =>
-              this.cloudinaryService.uploadFile(createPostDto.userId, file),
+            files.imageUrls.map((file) =>
+              this.cloudinaryService.uploadFile(
+                createPostDto.userId,
+                'post',
+                file,
+              ),
             ),
           );
 
@@ -46,14 +53,42 @@ export class PostsService {
         }
       }
 
-      const { userId, title, content, imageUrls, tags, isPublished } =
-        createPostDto;
+      // Upload video lên Cloudinary
+      if (files?.videoUrls && files.videoUrls.length > 0) {
+        try {
+          const uploadedVideos = await Promise.all(
+            files.videoUrls.map((file) =>
+              this.cloudinaryService.uploadFile(
+                createPostDto.userId,
+                'post',
+                file,
+              ),
+            ),
+          );
+          createFields.videoUrls = uploadedVideos.map((res) => res.secure_url);
+          console.log('Video đã upload:', createFields.videoUrls);
+        } catch (err) {
+          console.error('Lỗi khi upload video:', err);
+          throw new BadRequestException('Không thể upload video');
+        }
+      }
+
+      const {
+        userId,
+        title,
+        content,
+        imageUrls,
+        videoUrls,
+        tags,
+        isPublished,
+      } = createPostDto;
 
       const newPost = new this.PostsModel({
         userId,
         title,
         content,
         imageUrls: createFields.imageUrls || imageUrls,
+        videoUrls: createFields.videoUrls || videoUrls,
         tags,
         isPublished,
       });

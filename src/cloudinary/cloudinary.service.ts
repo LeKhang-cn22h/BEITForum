@@ -5,12 +5,16 @@ const streamifier = require('streamifier');
 
 @Injectable()
 export class CloudinaryService {
-  async uploadFile(id: string, file: Express.Multer.File): Promise<any> {
+  async uploadFile(
+    id: string,
+    nameFolder: string,
+    file: Express.Multer.File,
+  ): Promise<any> {
     return new Promise<CloudinaryResponse>((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
-          folder: `${id}/avatar`,
-          resource_type: 'image',
+          folder: `${id}/${nameFolder}`,
+          resource_type: 'auto',
         },
         (error, result) => {
           if (error) return reject(error);

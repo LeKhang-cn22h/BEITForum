@@ -23,11 +23,12 @@ export class ComplaintService {
     try {
       const createFields: Partial<CreateComplaintDto> = {};
 
-      // Nếu có file avatar thì upload lên Cloudinary, rồi lấy URL lưu vào updateFields.avatar
+      // Nếu có file image complaint thì upload lên Cloudinary, rồi lấy URL lưu vào updateFields.avatar
       if (file) {
         try {
           const uploadResult = await this.cloudinaryService.uploadFile(
             createComplaintDto.userId,
+            'imgComplaint',
             file,
           );
           createFields.img = uploadResult.secure_url;
@@ -54,7 +55,6 @@ export class ComplaintService {
       console.error('Error creating new complaint:', error);
       throw new Error('Failed to create new complaint');
     }
-    // return 'This action adds a new complaint';
   }
 
   async findAll() {

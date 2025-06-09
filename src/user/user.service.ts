@@ -5,8 +5,9 @@ import {
   UnauthorizedException,
   InternalServerErrorException,
   NotFoundException,
-  ConflictException
-} from '@nestjs/common';import { InjectModel } from '@nestjs/mongoose';
+  ConflictException,
+} from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
 import { UserDto } from './dto/userdto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { isValidObjectId, Model, Types } from 'mongoose';
@@ -17,11 +18,9 @@ import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { v2 as cloudinary } from 'cloudinary';
 @Injectable()
 export class UserService {
-
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private cloudinaryService: CloudinaryService,
-
   ) {}
 
   create(createUserDto: UserDto) {
@@ -29,14 +28,13 @@ export class UserService {
   }
 
   async findAllUser() {
-    try{
+    try {
       let user = await this.userModel.find();
       if (!user) {
         throw new UnauthorizedException('Không có user nào');
       }
-      return user
-    }
-    catch{
+      return user;
+    } catch {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
@@ -45,11 +43,10 @@ export class UserService {
   }
 
   async findUser(_id: String) {
-    try{
+    try {
       let user = await this.userModel.findOne({ _id });
-      return {message:"Lấy thành công",user};
-    }
-    catch{
+      return { message: 'Lấy thành công', user };
+    } catch {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
@@ -57,53 +54,62 @@ export class UserService {
     }
   }
 
-  async updateUser(id: string, updateUserDto: UpdateUserDto, file?: Express.Multer.File) {
-  try {
-    const user = await this.userModel.findById(id);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    const updateFields: Partial<UpdateUserDto> = {};
-
-    // Nếu có file avatar thì upload lên Cloudinary, rồi lấy URL lưu vào updateFields.avatar
-    if (file) {
-      try {
-        const uploadResult = await this.cloudinaryService.uploadFile(id, file);
-        updateFields.avatar = uploadResult.secure_url;
-        console.log('Avatar đã tải lên:', updateFields.avatar);
-      } catch (error) {
-        console.error('Lỗi Cloudinary:', error);
-        throw new BadRequestException('Lỗi khi tải avatar lên Cloudinary');
+  async updateUser(
+    id: string,
+    updateUserDto: UpdateUserDto,
+    file?: Express.Multer.File,
+  ) {
+    try {
+      const user = await this.userModel.findById(id);
+      if (!user) {
+        throw new NotFoundException('User not found');
       }
+
+      const updateFields: Partial<UpdateUserDto> = {};
+
+      // Nếu có file avatar thì upload lên Cloudinary, rồi lấy URL lưu vào updateFields.avatar
+      if (file) {
+        try {
+          const uploadResult = await this.cloudinaryService.uploadFile(
+            id,
+            'avatar',
+            file,
+          );
+          updateFields.avatar = uploadResult.secure_url;
+          console.log('Avatar đã tải lên:', updateFields.avatar);
+        } catch (error) {
+          console.error('Lỗi Cloudinary:', error);
+          throw new BadRequestException('Lỗi khi tải avatar lên Cloudinary');
+        }
+      }
+
+      // Bỏ avatar ra khỏi DTO để tránh ghi đè URL vừa upload (nếu có)
+      const { avatar, password, ...otherFields } = updateUserDto;
+
+      // Gộp các field cập nhật (không null, undefined) + avatar nếu có
+      const updateData = Object.fromEntries(
+        Object.entries(otherFields).filter(
+          ([_, value]) => value !== null && value !== undefined,
+        ),
+      );
+
+      if (updateFields.avatar) {
+        updateData.avatar = updateFields.avatar;
+      }
+
+      if (password) {
+        const bcrypt = require('bcrypt');
+        updateData.password = await bcrypt.hash(password, 10);
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        Object.assign(user, updateData);
+        await user.save();
+      }
+
+      return { message: 'Cập nhật thông tin thành công', avatar: user.avatar };
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
     }
-
-    // Bỏ avatar ra khỏi DTO để tránh ghi đè URL vừa upload (nếu có)
-    const { avatar, password, ...otherFields } = updateUserDto;
-
-    // Gộp các field cập nhật (không null, undefined) + avatar nếu có
-    const updateData = Object.fromEntries(
-      Object.entries(otherFields).filter(([_, value]) => value !== null && value !== undefined)
-    );
-
-    if (updateFields.avatar) {
-      updateData.avatar = updateFields.avatar;
-    }
-
-    if (password) {
-      const bcrypt = require('bcrypt');
-      updateData.password = await bcrypt.hash(password, 10);
-    }
-
-    if (Object.keys(updateData).length > 0) {
-      Object.assign(user, updateData);
-      await user.save();
-    }
-
-    return { message: 'Cập nhật thông tin thành công', avatar: user.avatar };
-  } catch (error) {
-    throw new InternalServerErrorException(error.message);
   }
-}
-
 }
