@@ -118,7 +118,7 @@ export class AuthService {
 
   async loginAsEmail(loginData: LoginData) {
     try {
-      console.log('ahahahasdasd`');
+      console.log('Dang nhap bang email');
 
       const { email, password } = loginData;
       let user = await this.userModel.findOne({ email });
@@ -136,9 +136,9 @@ export class AuthService {
         throw new UnauthorizedException('Mật khẩu không chính xác');
       }
       console.log('dung mat khau');
-      console.log('Ngoài if', user.isBanned);
+
       if (user.isBanned) {
-        console.log('Trong if', user.isBanned);
+        console.log('Tài khoản đã bị khóa');
         return {
           accessToken: null,
           message: 'Tài khoản của bạn đã bị khóa',
@@ -173,8 +173,9 @@ export class AuthService {
       console.log('>> JWT SECRET =', secret);
       const accessToken = this.jwtService.sign(
         { userId, email, name, phone, role },
-        { secret }, // 👈 truyền secret trực tiếp để test
+        { secret, expiresIn: '7d' }, // 👈 truyền secret trực tiếp để test
       );
+      console.log('>> accessToken =', accessToken);
       return { accessToken }; // ✅ trả về object có accessToken
     } catch (error) {
       throw new InternalServerErrorException('Không thể tạo token truy cập');
