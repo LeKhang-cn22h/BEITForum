@@ -42,13 +42,11 @@ export class AuthService {
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
-      const role = signUpData.role;
       const registedUser = await this.userModel.create({
         email,
         password: hashedPassword,
         name,
         phone,
-        role,
       });
       const savedUser = await registedUser.save();
       // Khởi tạo bookmark cho người dùng mới
