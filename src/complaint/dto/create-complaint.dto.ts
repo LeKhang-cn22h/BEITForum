@@ -1,4 +1,4 @@
-import { IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class CreateComplaintDto {
   @IsString()
@@ -10,6 +10,7 @@ export class CreateComplaintDto {
   @IsString()
   reason: string;
 
+  @IsOptional()
   @IsString()
-  img: string;
+  img?: string;
 }
