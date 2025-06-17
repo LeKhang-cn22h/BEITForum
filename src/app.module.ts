@@ -17,7 +17,7 @@ import { ComplaintModule } from './complaint/complaint.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true
+      isGlobal: true,
     }),
     JwtModule.registerAsync({
       global: true,
@@ -25,22 +25,30 @@ import { ComplaintModule } from './complaint/complaint.module';
       inject: [ConfigService],
       useFactory: async (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET'),
-        expiresIn: '7d',
+        signOptions: { expiresIn: '7d' },
       }),
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
         const uri = configService.get<string>('MONGO_URI');
-        return {uri};
+        return { uri };
       },
       inject: [ConfigService],
-    }), 
+    }),
 
-    AuthModule, PostsModule, CommentsModule, ReportAccountModule, ReportPostModule, UserModule, NewsModule, VoteModule, CloudinaryModule, ComplaintModule
+    AuthModule,
+    PostsModule,
+    CommentsModule,
+    ReportAccountModule,
+    ReportPostModule,
+    UserModule,
+    NewsModule,
+    VoteModule,
+    CloudinaryModule,
+    ComplaintModule,
   ],
   controllers: [AppController],
   providers: [AppService],
-
 })
 export class AppModule {}
