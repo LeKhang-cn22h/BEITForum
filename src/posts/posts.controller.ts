@@ -48,6 +48,11 @@ export class PostsController {
     return await this.postsService.createNewPost(createPostDto, files);
   }
 
+  @Get('all')
+  async getAllPost() {
+    return await this.postsService.getAllPost();
+  }
+
   @Post('vote/:postId')
   @HttpCode(200)
   async vote(@Param('postId') postId: string, @Body() voteDto: VoteDto) {
