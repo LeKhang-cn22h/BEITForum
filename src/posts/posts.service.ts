@@ -106,6 +106,17 @@ export class PostsService {
     }
   }
 
+  async getAllPost() {
+    try {
+      const listPost = await this.PostsModel.find();
+
+      return { listPost };
+    } catch (error) {
+      console.error('Error getting list post:', error);
+      throw new Error('Failed to get list post');
+    }
+  }
+
   private async initializeVotes(postId: string) {
     try {
       const upvoteRecord = new this.VoteModel({
@@ -132,7 +143,7 @@ export class PostsService {
   }
   async searchPosts(getPostDto: GetPostDto) {
     try {
-      const { userId, title, tags, page = 5, limit = 5,postsId } = getPostDto;
+      const { userId, title, tags, page = 5, limit = 5, postsId } = getPostDto;
 
       const query: any = {};
 
@@ -148,7 +159,7 @@ export class PostsService {
         query.tags = { $in: tags };
       }
       if (postsId && postsId.length > 0) {
-        query._id = { $in: postsId.map(id => new Types.ObjectId(id)) };
+        query._id = { $in: postsId.map((id) => new Types.ObjectId(id)) };
       }
 
       const skip = (page - 1) * limit;
@@ -235,53 +246,51 @@ export class PostsService {
     }
   }
   async hide(postId: string) {
-  try {
-    const post = await this.PostsModel.findByIdAndUpdate(
-      postId,
-      { isHidden: true },
-      { new: true }
-    );
+    try {
+      const post = await this.PostsModel.findByIdAndUpdate(
+        postId,
+        { isHidden: true },
+        { new: true },
+      );
 
-    if (!post) {
-      throw new Error('Post not found');
+      if (!post) {
+        throw new Error('Post not found');
+      }
+
+      return { success: true, message: 'Post hidden successfully', post };
+    } catch (error) {
+      console.error('Error hiding post:', error);
+      throw new Error('Failed to hide post');
     }
-
-    return { success: true, message: 'Post hidden successfully', post };
-  } catch (error) {
-    console.error('Error hiding post:', error);
-    throw new Error('Failed to hide post');
   }
-}
   // them bookmark cho post
   async setBookmark(postId: string, userId: string) {
     try {
       const bookmark = await this.BookMarkModel.findOne({ userId });
       console.log('Bookmark record:', bookmark);
-  
+
       if (!bookmark) {
         // Nếu user chưa có bookmark record, tạo mới
         await this.BookMarkModel.create({
-          userId: userId,  
+          userId: userId,
           postId: [postId],
         });
         return { message: 'Added to bookmarks' };
       }
-  
-      const postIndex = bookmark.postId.findIndex(
-        (id) => id === postId,
-      );
+
+      const postIndex = bookmark.postId.findIndex((id) => id === postId);
       console.log('Post index in bookmark:', postIndex);
-  
+
       if (postIndex > -1) {
         // Nếu đã bookmark → xóa postId khỏi mảng
         bookmark.postId.splice(postIndex, 1);
         await bookmark.save();
-        return { message: 'Removed from bookmarks',isBookmarked: false };
+        return { message: 'Removed from bookmarks', isBookmarked: false };
       } else {
         // Nếu chưa bookmark → thêm vào mảng
         bookmark.postId.push(postId);
         await bookmark.save();
-        return { message: 'Added to bookmarks',isBookmarked: true };
+        return { message: 'Added to bookmarks', isBookmarked: true };
       }
     } catch (error) {
       console.error(error);
@@ -292,17 +301,16 @@ export class PostsService {
   async getBookmarks(userId: string) {
     try {
       const bookmark = await this.BookMarkModel.findOne({ userId });
-  
-    return{
-      postsId : bookmark ? bookmark.postId : [],
-      message: bookmark ? 'Bookmarks retrieved successfully' : 'No bookmarks found',
-    }
-     
+
+      return {
+        postsId: bookmark ? bookmark.postId : [],
+        message: bookmark
+          ? 'Bookmarks retrieved successfully'
+          : 'No bookmarks found',
+      };
     } catch (error) {
       console.error('Error getting bookmarks:', error);
       throw new Error('Failed to get bookmarks');
     }
   }
-  
-  
 }
