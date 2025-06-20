@@ -6,19 +6,26 @@ import {
   Patch,
   Param,
   Delete,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { NewsService } from './news.service';
 import { CreateNewsDto } from './dto/create-news.dto';
 import { UpdateNewsDto } from './dto/update-news.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('news')
 export class NewsController {
   constructor(private readonly newsService: NewsService) {}
 
   @Post('create')
-  async create(@Body() createNewsDto: CreateNewsDto) {
+  @UseInterceptors(FileInterceptor('img'))
+  async create(
+    @Body() createNewsDto: CreateNewsDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
     console.log(createNewsDto);
-    return await this.newsService.create(createNewsDto);
+    return await this.newsService.create(createNewsDto, file);
   }
 
   @Get('getall')

@@ -19,7 +19,10 @@ import { HttpCode } from '@nestjs/common';
 import { UseGuards } from '@nestjs/common';
 import { get } from 'mongoose';
 import { GetPostDto } from './dto/get-post.dto';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import {
+  FileFieldsInterceptor,
+  FilesInterceptor,
+} from '@nestjs/platform-express';
 
 @Controller('posts')
 export class PostsController {
@@ -27,13 +30,27 @@ export class PostsController {
 
   @Post('create')
   @HttpCode(201)
-  @UseInterceptors(FilesInterceptor('imageUrls')) // 'images' là tên field form-data
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'imageUrls', maxCount: 10 },
+      { name: 'videoUrls', maxCount: 10 },
+    ]),
+  ) // 'images' là tên field form-data
   async create(
     @Body() createPostDto: CreatePostDto,
-    @UploadedFiles() files: Express.Multer.File[],
+    @UploadedFiles()
+    files: {
+      imageUrls?: Express.Multer.File[];
+      videoUrls?: Express.Multer.File[];
+    },
   ) {
     console.log(createPostDto);
     return await this.postsService.createNewPost(createPostDto, files);
+  }
+
+  @Get('all')
+  async getAllPost() {
+    return await this.postsService.getAllPost();
   }
 
   @Post('vote/:postId')

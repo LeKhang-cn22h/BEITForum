@@ -12,38 +12,12 @@ export class ReportAccountService {
     private reportModel: Model<ReportAccount>,
   ) {}
 
- async getReportedUsers() {
-  return this.reportModel.aggregate([
-    
-      {
-  $group: {
-    _id: '$reportedUserId',
-    reportCount: { $sum: 1 },
-    reportIds: { $push: '$_id' }
-  }
-},
-{
-  $lookup: {
-    from: 'users',
-    localField: '_id',
-    foreignField: '_id',
-    as: 'userInfo'
-  }
-},
-{ $unwind: '$userInfo' },
-{
-  $project: {
-    _id: { $arrayElemAt: ['$reportIds', 0] },  // ✅ _id chính là reportId
-    reportedUserId: '$_id', // giữ lại nếu cần
-    username: '$userInfo.name',
-    email: '$userInfo.email',
-    reportCount: 1
-  }
-}
+  
+ async getReportedUsers(): Promise<ReportAccount[]> {
 
+  return this.reportModel.find().exec();
 
-  ]);
-}
+ }
 
 
 

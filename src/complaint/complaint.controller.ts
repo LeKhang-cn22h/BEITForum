@@ -13,14 +13,14 @@ import {
 import { ComplaintService } from './complaint.service';
 import { CreateComplaintDto } from './dto/create-complaint.dto';
 import { UpdateComplaintDto } from './dto/update-complaint.dto';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('complaint')
 export class ComplaintController {
   constructor(private readonly complaintService: ComplaintService) {}
 
   @Post('create')
-  @UseInterceptors(FilesInterceptor('img'))
+  @UseInterceptors(FileInterceptor('img'))
   async create(
     @Body() createComplaintDto: CreateComplaintDto,
     @UploadedFile() file: Express.Multer.File,

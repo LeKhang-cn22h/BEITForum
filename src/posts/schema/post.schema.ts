@@ -31,6 +31,10 @@ export class Posts {
   @Prop({ required: true, unique: false })
   imageUrls: string[];
 
+  @IsString()
+  @Prop({ required: true, unique: false })
+  videoUrls: string[];
+
   @IsArray()
   @ArrayNotEmpty()
   @IsString({ each: true })
