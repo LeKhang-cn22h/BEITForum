@@ -1,0 +1,10 @@
+{
+  "eslint.experimental.useFlatConfig": true,
+  "eslint.options": {
+    "overrideConfigFile": "eslint.config.mjs"
+  },
+  "eslint.validate": ["typescript", "javascript"],
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true
+  }
+}
