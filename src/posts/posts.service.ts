@@ -23,17 +23,24 @@ export class PostsService {
   ) {}
   async createNewPost(
     createPostDto: CreatePostDto,
-    files?: Express.Multer.File[],
+    files?: {
+      imageUrls?: Express.Multer.File[];
+      videoUrls?: Express.Multer.File[];
+    },
   ) {
     try {
       const createFields: Partial<CreatePostDto> = {};
 
       // Nếu có file ảnh thì upload lên Cloudinary
-      if (files && files.length > 0) {
+      if (files?.imageUrls && files.imageUrls.length > 0) {
         try {
           const uploadResults = await Promise.all(
-            files.map((file) =>
-              this.cloudinaryService.uploadFile(createPostDto.userId, file),
+            files.imageUrls.map((file) =>
+              this.cloudinaryService.uploadFile(
+                createPostDto.userId,
+                'post',
+                file,
+              ),
             ),
           );
 
@@ -48,14 +55,42 @@ export class PostsService {
         }
       }
 
-      const { userId, title, content, imageUrls, tags, isPublished } =
-        createPostDto;
+      // Upload video lên Cloudinary
+      if (files?.videoUrls && files.videoUrls.length > 0) {
+        try {
+          const uploadedVideos = await Promise.all(
+            files.videoUrls.map((file) =>
+              this.cloudinaryService.uploadFile(
+                createPostDto.userId,
+                'post',
+                file,
+              ),
+            ),
+          );
+          createFields.videoUrls = uploadedVideos.map((res) => res.secure_url);
+          console.log('Video đã upload:', createFields.videoUrls);
+        } catch (err) {
+          console.error('Lỗi khi upload video:', err);
+          throw new BadRequestException('Không thể upload video');
+        }
+      }
+
+      const {
+        userId,
+        title,
+        content,
+        imageUrls,
+        videoUrls,
+        tags,
+        isPublished,
+      } = createPostDto;
 
       const newPost = new this.PostsModel({
         userId,
         title,
         content,
         imageUrls: createFields.imageUrls || imageUrls,
+        videoUrls: createFields.videoUrls || videoUrls,
         tags,
         isPublished,
       });
@@ -68,6 +103,17 @@ export class PostsService {
     } catch (error) {
       console.error('Error creating new post:', error);
       throw new Error('Failed to create new post');
+    }
+  }
+
+  async getAllPost() {
+    try {
+      const listPost = await this.PostsModel.find();
+
+      return { listPost };
+    } catch (error) {
+      console.error('Error getting list post:', error);
+      throw new Error('Failed to get list post');
     }
   }
 
@@ -97,7 +143,7 @@ export class PostsService {
   }
   async searchPosts(getPostDto: GetPostDto) {
     try {
-      const { userId, title, tags, page = 5, limit = 5,postsId } = getPostDto;
+      const { userId, title, tags, page = 5, limit = 5, postsId } = getPostDto;
 
       const query: any = {};
 
@@ -201,36 +247,52 @@ export class PostsService {
       throw new Error('Failed to delete post');
     }
   }
+  async hide(postId: string) {
+    try {
+      const post = await this.PostsModel.findByIdAndUpdate(
+        postId,
+        { isHidden: true },
+        { new: true },
+      );
+
+      if (!post) {
+        throw new Error('Post not found');
+      }
+
+      return { success: true, message: 'Post hidden successfully', post };
+    } catch (error) {
+      console.error('Error hiding post:', error);
+      throw new Error('Failed to hide post');
+    }
+  }
   // them bookmark cho post
   async setBookmark(postId: string, userId: string) {
     try {
       const bookmark = await this.BookMarkModel.findOne({ userId });
       console.log('Bookmark record:', bookmark);
-  
+
       if (!bookmark) {
         // Nếu user chưa có bookmark record, tạo mới
         await this.BookMarkModel.create({
-          userId: userId,  
+          userId: userId,
           postId: [postId],
         });
         return { message: 'Added to bookmarks' };
       }
-  
-      const postIndex = bookmark.postId.findIndex(
-        (id) => id === postId,
-      );
+
+      const postIndex = bookmark.postId.findIndex((id) => id === postId);
       console.log('Post index in bookmark:', postIndex);
-  
+
       if (postIndex > -1) {
         // Nếu đã bookmark → xóa postId khỏi mảng
         bookmark.postId.splice(postIndex, 1);
         await bookmark.save();
-        return { message: 'Removed from bookmarks',isBookmarked: false };
+        return { message: 'Removed from bookmarks', isBookmarked: false };
       } else {
         // Nếu chưa bookmark → thêm vào mảng
         bookmark.postId.push(postId);
         await bookmark.save();
-        return { message: 'Added to bookmarks',isBookmarked: true };
+        return { message: 'Added to bookmarks', isBookmarked: true };
       }
     } catch (error) {
       console.error(error);
@@ -241,17 +303,16 @@ export class PostsService {
   async getBookmarks(userId: string) {
     try {
       const bookmark = await this.BookMarkModel.findOne({ userId });
-  
-    return{
-      postsId : bookmark ? bookmark.postId : [],
-      message: bookmark ? 'Bookmarks retrieved successfully' : 'No bookmarks found',
-    }
-     
+
+      return {
+        postsId: bookmark ? bookmark.postId : [],
+        message: bookmark
+          ? 'Bookmarks retrieved successfully'
+          : 'No bookmarks found',
+      };
     } catch (error) {
       console.error('Error getting bookmarks:', error);
       throw new Error('Failed to get bookmarks');
     }
   }
-  
-  
 }

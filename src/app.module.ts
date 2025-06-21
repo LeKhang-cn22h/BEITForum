@@ -7,13 +7,12 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { PostsModule } from './posts/posts.module';
 import { CommentsModule } from './comments/comments.module';
-import { ReportAccountModule } from './report-account/report-account.module';
-import { ReportPostModule } from './report-post/report-post.module';
-
 import { VoteModule } from './vote/vote.module';
-import { NewsModule } from './news/news.module';
 import { UserModule } from './user/user.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { ReportAccountModule } from './report-account/report-account.module';
+import { ReportPostModule } from './report-post/report-post.module';
+import { NewsModule } from './news/news.module';
 import { ComplaintModule } from './complaint/complaint.module';
 import { FollowModule } from './follow/follow.module';
 @Module({
@@ -27,7 +26,7 @@ import { FollowModule } from './follow/follow.module';
       inject: [ConfigService],
       useFactory: async (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET'),
-        expiresIn: '7d',
+        signOptions: { expiresIn: '7d' },
       }),
     }),
     MongooseModule.forRootAsync({
@@ -37,12 +36,18 @@ import { FollowModule } from './follow/follow.module';
         return { uri };
       },
       inject: [ConfigService],
+    }),
 
-
-    }), 
-    AuthModule, PostsModule, CommentsModule, ReportAccountModule, ReportPostModule, UserModule, NewsModule, VoteModule, CloudinaryModule, ComplaintModule, FollowModule
-
-
+    AuthModule,
+    PostsModule,
+    CommentsModule,
+    ReportAccountModule,
+    ReportPostModule,
+    UserModule,
+    NewsModule,
+    VoteModule,
+    CloudinaryModule,
+    ComplaintModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -12,34 +12,12 @@ export class ReportAccountService {
     private reportModel: Model<ReportAccount>,
   ) {}
 
- async getReportedUsers() {
-  return this.reportModel.aggregate([
-    {
-      $group: {
-        _id: '$reportedUserId', 
-        reportCount: { $sum: 1 },
-        reportIds: { $push: '$_id' }
-      },
-    },
-    {
-      $lookup: {
-        from: 'users',
-        localField: '_id',      
-        foreignField: '_id',    
-        as: 'userInfo',
-      },
-    },
-    { $unwind: '$userInfo' },
-    {
-      $project: {
-        userId: '$_id',
-        username: '$userInfo.name',
-        email: '$userInfo.email',
-        reportCount: 1,
-      },
-    },
-  ]);
-}
+  
+ async getReportedUsers(): Promise<ReportAccount[]> {
+
+  return this.reportModel.find().exec();
+
+ }
 
 
 
@@ -73,16 +51,19 @@ export class ReportAccountService {
     const reporterUser = report.reporterUserId as any;
 
     return {
-      _id: report._id,
-      reportedUserId: report.reportedUserId.toString(),
-      reportedUserName: reportedUser.name,
-      email: reportedUser.email,
-      phone: reportedUser.phone,
-      isBanned: reportedUser.isBanned,
-      reporterName: reporterUser.name,
-      reason: report.reason,
-      createdAt: report.createdAt
-    };
+  _id: report._id,
+  reportedUser: {
+    _id: reportedUser._id,
+    name: reportedUser.name,
+    email: reportedUser.email,
+    phone: reportedUser.phone,
+    isBanned: reportedUser.isBanned,
+  },
+  reporterName: reporterUser.name,
+  reason: report.reason,
+  createdAt: report.createdAt
+};
+
   } catch (err) {
     console.error('getReportById error:', err);
     throw new NotFoundException('Invalid ID format or not found');

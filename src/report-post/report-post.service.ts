@@ -22,11 +22,30 @@ export class ReportPostService {
   }
 
   async getAllReportPost() {
-    return this.reportPostModel
-      .find()
-      .populate('reportedPostId reporterUserId')
-      .exec();
-  }
+  const reports = await this.reportPostModel
+    .find()
+    .populate('reportedPostId', 'title userId') // populate post
+    .populate('reporterUserId', 'name email')    // populate user
+    .lean();
+
+  return reports.map(report => {
+  const post = report.reportedPostId as any;
+  const reporter = report.reporterUserId as any;
+
+  return {
+    _id: report._id,
+    reason: report.reason,
+    createdAt: report.createdAt,
+    reportedPostId: post?._id || '',
+    reportedPostTitle: post?.title || '',
+    reportedPostUserId: post?.userId || '',
+   
+
+  };
+});
+
+}
+
 
   async getReportPostById(id: string) {
     try {
@@ -35,7 +54,7 @@ export class ReportPostService {
         .populate({
           path: 'reportedPostId',
           select:
-            'title content imageUrl tags isPublished totalUpvotes totalDownvotes createdAt updatedAt userId',
+            'title content imageUrls videoUrls tags isPublished totalUpvotes totalDownvotes createdAt updatedAt userId',
         })
         .populate({
           path: 'reporterUserId',
@@ -61,7 +80,8 @@ export class ReportPostService {
               userId: reportedPost.userId,
               title: reportedPost.title,
               content: reportedPost.content,
-              imageUrl: reportedPost.imageUrl,
+              imageUrls: reportedPost.imageUrls,
+              videoUrls: reportedPost.videoUrls,
               tags: reportedPost.tags,
               isPublished: reportedPost.isPublished,
               totalUpvotes: reportedPost.totalUpvotes,

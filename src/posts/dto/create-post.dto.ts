@@ -22,6 +22,10 @@ export class CreatePostDto {
   imageUrls?: string[];
 
   @IsOptional()
+  @IsString()
+  videoUrls?: string[];
+
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
   tags?: string[];

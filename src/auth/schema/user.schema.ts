@@ -2,7 +2,6 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
 export type UserDocument = User & Document;
-
 @Schema()
 export class User {
   @Prop({ required: true, unique: false})
@@ -38,6 +37,9 @@ export class User {
   @Prop({ required: false, unique: false,default:false})
   isBanned: boolean;
   
+  @Prop({ default: null })
+  bannedUntil: Date;
+
   @Prop({ required: false, unique: false,default:[]})
   skill: Skill[];
   
