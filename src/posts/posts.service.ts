@@ -112,8 +112,10 @@ export class PostsService {
       if (tags && tags.length > 0) {
         query.tags = { $in: tags };
       }
+      console.log("postsId",postsId)
       if (postsId && postsId.length > 0) {
         query._id = { $in: postsId.map(id => new Types.ObjectId(id)) };
+        console.log("query",query._id)
       }
 
       const skip = (page - 1) * limit;

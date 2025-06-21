@@ -16,6 +16,7 @@ import { JwtService } from '@nestjs/jwt';
 import { error } from 'console';
 import { ConfigService } from '@nestjs/config';
 import { BookMark } from 'src/posts/schema/bookmark.schema';
+import { Follow } from 'src/follow/entities/follow.entity';
 
 @Injectable()
 export class AuthService {
@@ -25,6 +26,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
      @InjectModel(BookMark.name) private BookMarkModel: Model<BookMark>,
+     @InjectModel(Follow.name) private FollowModel: Model<Follow>,
 
   ) {}
 
@@ -54,6 +56,7 @@ export class AuthService {
       const savedUser = await registedUser.save();
       // Khởi tạo bookmark cho người dùng mới
       await this.initializeBookMark(savedUser._id.toString());
+      await this.initializeFollow(savedUser._id.toString());
 
       return {
         message: 'Tạo tài khoản thành công',
@@ -172,6 +175,20 @@ private async initializeBookMark(userId: string) {
     });
     if(bookmarkRecord) {
       await bookmarkRecord.save();
+    }
+  } catch (error) {
+    console.error('Error initializing bookmark:', error);
+    throw new InternalServerErrorException('Failed to initialize bookmark');
+  }
+}
+private async initializeFollow(userId: string) {
+  try {
+    const FollowRecord = new this.FollowModel({
+      userId: userId,
+      postId: [],
+    });
+    if(FollowRecord) {
+      await FollowRecord.save();
     }
   } catch (error) {
     console.error('Error initializing bookmark:', error);
