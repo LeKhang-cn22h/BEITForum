@@ -18,7 +18,7 @@ export class AuthController {
 
   @Post('register')
   async registerUser(@Body() signUpData: SignUpDto) {
-    console.log(signUpData);
+    console.log("goi service sign up: "+ signUpData);
 
     return this.authService.registerUser(signUpData);
   }
