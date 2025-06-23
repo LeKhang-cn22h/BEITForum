@@ -12,7 +12,6 @@ export class ReportAccountService {
     private reportModel: Model<ReportAccount>,
   ) {}
 
-  
  async getReportedUsers(): Promise<ReportAccount[]> {
 
   return this.reportModel.find().exec();
