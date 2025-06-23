@@ -28,6 +28,7 @@ export class UserController {
     @Body() updateUserDto: UpdateUserDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
+    console.log(updateUserDto)
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('ID không hợp lệ');
     }

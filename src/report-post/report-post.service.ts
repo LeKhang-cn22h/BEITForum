@@ -54,7 +54,7 @@ export class ReportPostService {
         .populate({
           path: 'reportedPostId',
           select:
-            'title content imageUrl tags isPublished totalUpvotes totalDownvotes createdAt updatedAt userId',
+            'title content imageUrls videoUrls tags isPublished totalUpvotes totalDownvotes createdAt updatedAt userId',
         })
         .populate({
           path: 'reporterUserId',
@@ -80,7 +80,8 @@ export class ReportPostService {
               userId: reportedPost.userId,
               title: reportedPost.title,
               content: reportedPost.content,
-              imageUrl: reportedPost.imageUrl,
+              imageUrls: reportedPost.imageUrls,
+              videoUrls: reportedPost.videoUrls,
               tags: reportedPost.tags,
               isPublished: reportedPost.isPublished,
               totalUpvotes: reportedPost.totalUpvotes,
