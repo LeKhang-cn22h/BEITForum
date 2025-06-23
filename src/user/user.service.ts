@@ -102,6 +102,25 @@ export class UserService {
         const bcrypt = require('bcrypt');
         updateData.password = await bcrypt.hash(password, 10);
       }
+    if (typeof updateUserDto.skill === 'string') {
+      try {
+        console.log("Sau khi parse skill "+JSON.parse(updateUserDto.skill))
+        updateData.skill = JSON.parse(updateUserDto.skill);
+        console.log(updateData)
+      } catch (err) {
+        throw new BadRequestException('Trường skills không phải là JSON hợp lệ');
+      }
+    }
+
+     if (typeof updateUserDto.certificate === 'string') {
+      try {
+        console.log("Sau khi parse certificate "+JSON.parse(updateUserDto.certificate))
+        updateData.certificate = JSON.parse(updateUserDto.certificate);
+        console.log(updateData)
+      } catch (err) {
+        throw new BadRequestException('Trường Certificate không phải là JSON hợp lệ');
+      }
+    }
 
       if (Object.keys(updateData).length > 0) {
         Object.assign(user, updateData);
