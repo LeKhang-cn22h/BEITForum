@@ -39,6 +39,6 @@ export class UserDto {
     isBanned: string;
     
     @Prop({ required: false, unique: false, default:[]})
-    skills: Skill[];
+    skill: Skill[];
 
 }
