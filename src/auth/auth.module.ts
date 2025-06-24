@@ -5,6 +5,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { User,UserSchema } from './schema/user.schema';
 import { JwtModule } from '@nestjs/jwt';
 import { BookMark, BookMarkSchema } from 'src/posts/schema/bookmark.schema';
+import { Follow } from 'src/follow/entities/follow.entity';
+import { FollowSchema } from 'src/follow/schema/follow.schema';
 
 
 @Module({
@@ -17,6 +19,9 @@ import { BookMark, BookMarkSchema } from 'src/posts/schema/bookmark.schema';
   {
     name: BookMark.name,
     schema: BookMarkSchema,
+  },{
+    name: Follow.name,
+    schema: FollowSchema,
   },
   ])
   ],
