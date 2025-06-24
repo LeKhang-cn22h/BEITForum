@@ -117,22 +117,6 @@ export class PostsService {
     }
   }
 
-  async getPostById(id: string) {
-    try {
-      if (!mongoose.Types.ObjectId.isValid(id)) {
-        throw new Error('Invalid post ID');
-      }
-      const post = await this.PostsModel.findById(id);
-      if (!post) {
-        throw new Error('Post not found');
-      }
-      return { post };
-    } catch (error) {
-      console.error('Error getting post by id:', error);
-      throw new Error('Failed to get post by id');
-    }
-  }
-
   private async initializeVotes(postId: string) {
     try {
       const upvoteRecord = new this.VoteModel({
