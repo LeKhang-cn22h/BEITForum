@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { Posts } from './schema/post.schema';
-import { get, Model } from 'mongoose';
+import mongoose, { get, Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { VoteDto } from './dto/vote.dto';
 import { Types } from 'mongoose';
@@ -117,6 +117,22 @@ export class PostsService {
     }
   }
 
+  async getPostById(id: string) {
+    try {
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new Error('Invalid post ID');
+      }
+      const post = await this.PostsModel.findById(id);
+      if (!post) {
+        throw new Error('Post not found');
+      }
+      return { post };
+    } catch (error) {
+      console.error('Error getting post by id:', error);
+      throw new Error('Failed to get post by id');
+    }
+  }
+
   private async initializeVotes(postId: string) {
     try {
       const upvoteRecord = new this.VoteModel({
@@ -158,8 +174,10 @@ export class PostsService {
       if (tags && tags.length > 0) {
         query.tags = { $in: tags };
       }
+      console.log('postsId', postsId);
       if (postsId && postsId.length > 0) {
         query._id = { $in: postsId.map((id) => new Types.ObjectId(id)) };
+        console.log('query', query._id);
       }
 
       const skip = (page - 1) * limit;
