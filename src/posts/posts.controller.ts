@@ -26,7 +26,7 @@ import {
 
 @Controller('posts')
 export class PostsController {
-  constructor(private readonly postsService: PostsService) {}
+  constructor(private readonly postsService: PostsService) { }
 
   @Post('create')
   @HttpCode(201)
@@ -60,6 +60,17 @@ export class PostsController {
     //return this.postsService.votes(postId, voteDto);
   }
 
+  @Get('single/:postId')
+  @HttpCode(HttpStatus.OK)
+  async getPostById(@Param('postId') postId: string) {
+    if (!postId) {
+      return {
+        message: 'postId is required',
+        statusCode: HttpStatus.BAD_REQUEST,
+      };
+    }
+    return this.postsService.getPostId(postId);
+  }
   @Post('search')
   @HttpCode(200)
   async getPosts(@Body() getPostDto: GetPostDto) {
@@ -108,4 +119,5 @@ export class PostsController {
   hidePost(@Param('id') postId: string) {
     return this.postsService.hide(postId);
   }
+
 }
