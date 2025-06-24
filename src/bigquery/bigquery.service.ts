@@ -51,14 +51,28 @@
 import { Injectable } from '@nestjs/common';
 import { BigQuery } from '@google-cloud/bigquery';
 import * as path from 'path';
+import * as fs from 'fs';
+
 
 @Injectable()
 export class BigqueryService {
   private bigquery: BigQuery;
 
   constructor() {
+    let keyPath = '';
+
+    if (fs.existsSync('/etc/secrets/itforum-e2eea.json')) {
+      // 🔐 Khi chạy trên Render hoặc server dùng secrets
+      keyPath = '/etc/secrets/itforum-e2eea.json';
+      console.log('🔐 Loaded BigQuery credentials from /etc/secrets');
+    } else {
+      // 💻 Khi chạy local
+      keyPath = path.join(__dirname, '../../src/credentials/itforum-e2eea.json');
+      console.log('💻 Loaded BigQuery credentials from local path');
+    }
+
     this.bigquery = new BigQuery({
-      keyFilename: path.join(__dirname, '../../src/credentials/itforum-e2eea.json'),
+      keyFilename: keyPath,
     });
   }
 
