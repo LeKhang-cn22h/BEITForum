@@ -176,8 +176,8 @@ export class PostsService {
       }
       console.log('postsId', postsId);
       if (postsId && postsId.length > 0) {
-        query._id = { $in: postsId.map((id) => new Types.ObjectId(id)) };
-        console.log('query', query._id);
+        query._id = { $in: postsId.map(id => new Types.ObjectId(id)) };
+        console.log("query",query._id)
       }
 
       const skip = (page - 1) * limit;
@@ -205,6 +205,7 @@ export class PostsService {
           {
             $addFields: {
               userName: { $arrayElemAt: ['$user.name', 0] },
+              avatar : { $arrayElemAt: ['$user.avatar', 0] },
             },
           },
           { $project: { user: 0, userIdObj: 0 } },
@@ -229,7 +230,46 @@ export class PostsService {
       throw new Error('Failed to search posts');
     }
   }
-
+// Lấy thông tin chi tiết của một bài viết theo ID
+  async getPostId(postId: string) {
+    try {
+      const post = await this.PostsModel.aggregate([
+        { $match: { _id: new Types.ObjectId(postId) } }, 
+        {
+          $addFields: {
+            userIdObj: { $toObjectId: '$userId' }, 
+          },
+        },
+        {
+          $lookup: {
+            from: 'users', 
+            localField: 'userIdObj',
+            foreignField: '_id',
+            as: 'user',
+          },
+        },
+        {
+          $addFields: {
+            userName: { $arrayElemAt: ['$user.name', 0] }, 
+            avatar: { $arrayElemAt: ['$user.avatar', 0] }, 
+          },
+        },
+        { $project: { user: 0, userIdObj: 0 } }, 
+      ]);
+  
+      if (!post || post.length === 0) {
+        throw new Error('Post not found');
+      }
+  
+      return {
+        post: post[0], // Return the first matched post
+        message: 'Post retrieved successfully',
+      };
+    } catch (error) {
+      console.error('Error getting post by ID:', error);
+      throw new Error('Failed to get post by ID');
+    }
+  }
   async updatePost(postId: string, updateData: Partial<CreatePostDto>) {
     try {
       const updatedPost = await this.PostsModel.findByIdAndUpdate(
@@ -252,17 +292,27 @@ export class PostsService {
   async deletePost(postId: string) {
     try {
       const deletedPost = await this.PostsModel.findByIdAndDelete(postId);
-
       if (!deletedPost) {
         throw new Error('Post not found');
       }
+      await this.VoteModel.deleteMany({ postId });
 
-      return { success: true, message: 'Post deleted successfully' };
+      await this.BookMarkModel.updateMany(
+        { postId: { $in: [postId] } }, 
+        { $pull: { postId } }
+      );
+  
+      return {
+        success: true,
+        message: 'Post deleted successfully',
+        deletedPostId: postId,
+      };
     } catch (error) {
-      console.error('Error deleting post:', error);
+      console.error('Error deleting post:', error.message || error);
       throw new Error('Failed to delete post');
     }
   }
+  
   async hide(postId: string) {
     try {
       const post = await this.PostsModel.findByIdAndUpdate(
