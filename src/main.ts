@@ -8,9 +8,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(
     new ValidationPipe({
+<<<<<<< HEAD
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+=======
+      whitelist: true, //chỉ cho phép field có trong DTO
+      forbidNonWhitelisted: true, // chặn field lạ
+      transform: true, // tự động chuyển kiểu string thành ObjectId, number,
+>>>>>>> a46936deafde1c3b98d6d37b5679c1c7f86c0979
     }),
   );
 

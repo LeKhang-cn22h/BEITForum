@@ -14,6 +14,7 @@ import { ReportAccountModule } from './report-account/report-account.module';
 import { ReportPostModule } from './report-post/report-post.module';
 import { NewsModule } from './news/news.module';
 import { ComplaintModule } from './complaint/complaint.module';
+import { FollowModule } from './follow/follow.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
