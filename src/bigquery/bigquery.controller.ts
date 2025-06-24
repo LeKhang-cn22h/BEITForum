@@ -13,8 +13,10 @@
 //     return data;
 //   }
 // }
+
 import { Controller, Get } from '@nestjs/common';
 import { BigqueryService } from './bigquery.service';
+
 
 @Controller('api/events')
 export class BigqueryController {
