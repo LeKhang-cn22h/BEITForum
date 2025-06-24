@@ -54,14 +54,6 @@ export class PostsController {
     return await this.postsService.getAllPost();
   }
 
-  @Get('id/:postId')
-  async getPostById(@Param('postId') postId: string) {
-    const post = await this.postsService.getPostById(postId);
-    if (!post) throw new NotFoundException('Post không tồn tại');
-
-    return post;
-  }
-
   @Post('vote/:postId')
   @HttpCode(200)
   async vote(@Param('postId') postId: string, @Body() voteDto: VoteDto) {
