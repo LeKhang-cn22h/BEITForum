@@ -7,7 +7,7 @@
   },
   "assets": [
     {
-      "include": "src/credentials/**/*.json",
+      "include": "src/credentials/*.json",
       "outDir": "dist/src/credentials"
     }
   ]
