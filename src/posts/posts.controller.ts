@@ -29,6 +29,20 @@ import {
 export class PostsController {
   constructor(private readonly postsService: PostsService) { }
 
+
+  @Get('single/:postId')
+  @HttpCode(200)
+  async getPostId(@Param('postId') postId: string) {
+    if (!postId) {
+      return {
+        message: 'postId is required',
+        statusCode: HttpStatus.BAD_REQUEST,
+      };
+    }
+    return this.postsService.getPostId(postId);
+  }
+
+  
   @Post('create')
   @HttpCode(201)
   @UseInterceptors(
@@ -48,11 +62,7 @@ export class PostsController {
     console.log(createPostDto);
     return await this.postsService.createNewPost(createPostDto, files);
   }
-
-  @Get('all')
-  async getAllPost() {
-    return await this.postsService.getAllPost();
-  }
+  
 
   @Post('vote/:postId')
   @HttpCode(200)
@@ -61,17 +71,7 @@ export class PostsController {
     //return this.postsService.votes(postId, voteDto);
   }
 
-  @Get('single/:postId')
-  @HttpCode(HttpStatus.OK)
-  async getPostById(@Param('postId') postId: string) {
-    if (!postId) {
-      return {
-        message: 'postId is required',
-        statusCode: HttpStatus.BAD_REQUEST,
-      };
-    }
-    return this.postsService.getPostId(postId);
-  }
+  
   @Post('search')
   @HttpCode(200)
   async getPosts(@Body() getPostDto: GetPostDto) {
