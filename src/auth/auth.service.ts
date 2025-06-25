@@ -69,6 +69,11 @@ export class AuthService {
           `Giá trị '${value}' của trường '${field}' đã được sử dụng`,
         );
       }
+      if (error.code = 401){
+        throw new UnauthorizedException(
+          'Tài khoản đã đăng kí',
+        );
+      }
       throw new InternalServerErrorException(
         'Đã xảy ra lỗi khi đăng ký tài khoản ' + error,
       );
