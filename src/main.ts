@@ -11,14 +11,18 @@ import * as path from 'path';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   let serviceAccount;
+  try {
+    const isProd = process.env.NODE_ENV === 'production';
 
- try {
-  const serviceAccountPath = path.resolve(__dirname, '../src/firebase/firebase-config.json');
-      serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-    } catch (error) {
-      console.error('Error loading Firebase service account from Render secrets:', error);
-      process.exit(1);
-    }
+    const serviceAccountPath = isProd
+      ? '/etc/secrets/firebase-config.json'
+      : path.resolve(__dirname, '../src/firebase/firebase-config.json');
+
+    serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+  } catch (error) {
+    console.error('Error loading Firebase service account from Render secrets:', error);
+    process.exit(1);
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({
