@@ -48,6 +48,7 @@ import { FollowModule } from './follow/follow.module';
     VoteModule,
     CloudinaryModule,
     ComplaintModule,
+    FollowModule
   ],
   controllers: [AppController],
   providers: [AppService],
