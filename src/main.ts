@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+// import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import axios from 'axios'; 
 
 async function bootstrap() {
@@ -14,7 +14,7 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalFilters(new AllExceptionsFilter());
+  // app.useGlobalFilters(new AllExceptionsFilter());
 
   const port = process.env.PORT ?? 4000;
   await app.listen(port);
