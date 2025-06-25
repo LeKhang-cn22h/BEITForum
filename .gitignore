@@ -14,6 +14,7 @@ lerna-debug.log*
 
 # Bỏ qua file môi trường bí mật
 .env
+src/firebase/*.json
 
 
 # OS
@@ -58,3 +59,5 @@ pids
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+# Ẩn file credentials
+src/credentials/*.json

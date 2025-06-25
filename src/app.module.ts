@@ -16,6 +16,8 @@ import { NewsModule } from './news/news.module';
 import { ComplaintModule } from './complaint/complaint.module';
 import { FollowModule } from './follow/follow.module';
 import { CrashLogModule } from './crash-log/crash-log.module';
+import { NotificationModule } from './notification/notification.module';
+import { BigqueryModule } from './bigquery/bigquery.module'; 
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -50,8 +52,12 @@ import { CrashLogModule } from './crash-log/crash-log.module';
     CloudinaryModule,
     ComplaintModule,
     CrashLogModule,
+    NotificationModule,
+    BigqueryModule,
+    FollowModule
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
+

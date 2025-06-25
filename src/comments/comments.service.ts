@@ -3,19 +3,29 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Comment, CommentSchema } from './schema/comment.schema';
+import { Posts } from '../posts/schema/post.schema'
+import { User } from '../auth/schema/user.schema'
 import { ReplyComment } from './schema/reply.schema';
 import { CreateReplyDto } from './dto/create-reply.dto';
 import { UpdateReplyDto } from './dto/update-reply.dto';
+import * as admin from 'firebase-admin';
+import { Notification } from 'src/notification/schema/notification.schema';
+import { NotificationService } from 'src/notification/notification.service';
+
 @Injectable()
 export class CommentsService {
    constructor(
       @InjectModel(Comment.name) private CommentModel: Model<Comment>,
-      @InjectModel(ReplyComment.name) private ReplyCommentModel: Model<ReplyComment>
+      @InjectModel(Posts.name) private PostsModel:Model<Posts>,
+      @InjectModel(User.name) private UserModel:Model<User>, 
+      @InjectModel(Notification.name) private NotificationModel: Model<Notification>,
+      @InjectModel(ReplyComment.name) private ReplyCommentModel: Model<ReplyComment>,
+      private notificationService: NotificationService,
     ) {}
-    // Tao comment
-  async create(createCommentDto: CreateCommentDto) {
+  // Tao comment
+  async createComment(createCommentDto: CreateCommentDto) {
     try {
       const { userId, postId, content } = createCommentDto;
       const newComment = {
@@ -24,13 +34,29 @@ export class CommentsService {
         content,
       };
       const createdComment = await this.CommentModel.create(newComment);
+      const userComment = await this.UserModel.findById(userId);
+      // 2. Lấy bài viết liên quan
+      const postOwner = await this.PostsModel.findById(postId).populate<{userId: User & {_id: Types.ObjectId} }>("userId");
+      // 3. Kiểm tra nếu người comment KHÔNG PHẢI chủ post thì mới gửi thông báo
+      if (postOwner && postOwner.userId && postOwner.userId._id.toString() !== userId.toString()) {
+        const notification = {
+          receiverId: postOwner.userId._id.toString(),
+          title: `${userComment?.username || 'Người dùng'} đã bình luận vào bài viết của bạn`,
+          body: `${userComment?.username || ''} đã viết: ${content}`,
+          data: {
+            postId,
+            commentId: createdComment._id.toString(),
+            userId,
+          },
+        };
 
-      return createdComment; 
-      
+        // Gọi service notification
+        await this.notificationService.createNotification(notification);
+      }
+      return createdComment;       
     } catch (error) {
       console.error('Error creating comment:', error);
       throw new Error('Failed to create comment');
-      
     }
   }
 // Lay danh sach comment
@@ -167,6 +193,7 @@ async findByPost(postId: string, page = 1, limit = 5) {
       throw new Error('Failed to delete comment');
     }
   }
+
    async createReply(createReplyDto : CreateReplyDto) {
 
     try {

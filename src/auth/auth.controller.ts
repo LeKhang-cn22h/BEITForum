@@ -18,7 +18,7 @@ export class AuthController {
 
   @Post('register')
   async registerUser(@Body() signUpData: SignUpDto) {
-    console.log(signUpData);
+    console.log("goi service sign up: "+ signUpData);
 
     return this.authService.registerUser(signUpData);
   }
@@ -34,6 +34,7 @@ export class AuthController {
         email: '',
         phone: loginDto.emailOrPhone,
         password: loginDto.password,
+        fcmToken: loginDto.fcmToken
       };
       return this.authService.loginAsPhone(loginData);
     } else {
@@ -41,6 +42,7 @@ export class AuthController {
         email: loginDto.emailOrPhone,
         phone: '',
         password: loginDto.password,
+        fcmToken: loginDto.fcmToken
       };
       return this.authService.loginAsEmail(loginData);
     }

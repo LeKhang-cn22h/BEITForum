@@ -15,7 +15,7 @@ import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { VoteDto } from './dto/vote.dto';
-import { Posts } from './schema/post.schema';
+import { Posts } from './schema/post.schema'; 
 import { HttpCode } from '@nestjs/common';
 import { UseGuards } from '@nestjs/common';
 import { get } from 'mongoose';
@@ -27,8 +27,22 @@ import {
 
 @Controller('posts')
 export class PostsController {
-  constructor(private readonly postsService: PostsService) {}
+  constructor(private readonly postsService: PostsService) { }
 
+
+  @Get('single/:postId')
+  @HttpCode(200)
+  async getPostId(@Param('postId') postId: string) {
+    if (!postId) {
+      return {
+        message: 'postId is required',
+        statusCode: HttpStatus.BAD_REQUEST,
+      };
+    }
+    return this.postsService.getPostId(postId);
+  }
+
+  
   @Post('create')
   @HttpCode(201)
   @UseInterceptors(
@@ -48,19 +62,7 @@ export class PostsController {
     console.log(createPostDto);
     return await this.postsService.createNewPost(createPostDto, files);
   }
-
-  @Get('all')
-  async getAllPost() {
-    return await this.postsService.getAllPost();
-  }
-
-  @Get('id/:postId')
-  async getPostById(@Param('postId') postId: string) {
-    const post = await this.postsService.getPostById(postId);
-    if (!post) throw new NotFoundException('Post không tồn tại');
-
-    return post;
-  }
+  
 
   @Post('vote/:postId')
   @HttpCode(200)
@@ -69,6 +71,7 @@ export class PostsController {
     //return this.postsService.votes(postId, voteDto);
   }
 
+  
   @Post('search')
   @HttpCode(200)
   async getPosts(@Body() getPostDto: GetPostDto) {
@@ -117,4 +120,5 @@ export class PostsController {
   hidePost(@Param('id') postId: string) {
     return this.postsService.hide(postId);
   }
+
 }
