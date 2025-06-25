@@ -1,22 +1,28 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+// import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+// import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import * as fs from 'fs';
 import * as admin from 'firebase-admin';
 import axios from 'axios'; 
+import * as path from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   let serviceAccount;
+  try {
+    const isProd = process.env.NODE_ENV === 'production';
 
- try {
-      const serviceAccountPath = './src/firebase/firebase-config.json';
-      serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-    } catch (error) {
-      console.error('Error loading Firebase service account from Render secrets:', error);
-      process.exit(1);
-    }
+    const serviceAccountPath = isProd
+      ? '/etc/secrets/firebase-config.json'
+      : path.resolve(__dirname, '../src/firebase/firebase-config.json');
+
+    serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+  } catch (error) {
+    console.error('Error loading Firebase service account from Render secrets:', error);
+    process.exit(1);
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -26,11 +32,12 @@ async function bootstrap() {
     }),
   );
 
+  // app.useGlobalFilters(new AllExceptionsFilter());
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
   // ✅ Gắn Exception Filter toàn cục (để log lỗi lên Google Sheets)
-  app.useGlobalFilters(new AllExceptionsFilter());
+  // app.useGlobalFilters(new AllExceptionsFilter());
 
   const port = process.env.PORT ?? 4000;
   await app.listen(port);
