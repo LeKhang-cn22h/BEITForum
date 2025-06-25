@@ -52,6 +52,7 @@ import { BigqueryModule } from './bigquery/bigquery.module';
     ComplaintModule,
     NotificationModule,
     BigqueryModule,
+    FollowModule
   ],
   controllers: [AppController],
   providers: [AppService],
