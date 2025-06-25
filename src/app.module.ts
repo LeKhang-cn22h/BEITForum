@@ -16,6 +16,7 @@ import { NewsModule } from './news/news.module';
 import { ComplaintModule } from './complaint/complaint.module';
 import { FollowModule } from './follow/follow.module';
 import { NotificationModule } from './notification/notification.module';
+import { BigqueryModule } from './bigquery/bigquery.module'; 
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -50,8 +51,10 @@ import { NotificationModule } from './notification/notification.module';
     CloudinaryModule,
     ComplaintModule,
     NotificationModule,
+    BigqueryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
+
