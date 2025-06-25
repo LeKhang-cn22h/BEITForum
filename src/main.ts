@@ -6,13 +6,14 @@ import { ValidationPipe } from '@nestjs/common';
 import * as fs from 'fs';
 import * as admin from 'firebase-admin';
 import axios from 'axios'; 
+import * as path from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   let serviceAccount;
 
  try {
-      const serviceAccountPath = './src/firebase/firebase-config.json';
+  const serviceAccountPath = path.resolve(__dirname, '../src/firebase/firebase-config.json');
       serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
     } catch (error) {
       console.error('Error loading Firebase service account from Render secrets:', error);

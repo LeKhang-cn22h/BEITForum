@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import * as path from 'path';
 import axios from 'axios';
-
+// phân tích lỗi crash và lưu vào Firestore
+// sử dụng OpenRouter để phân tích lỗi và đưa ra gợi ý sửa lỗi
 @Injectable()
 export class CrashLogService {
   private apiKey: string;
@@ -12,14 +13,6 @@ export class CrashLogService {
 
     if (!this.apiKey) {
       throw new Error('API key cho OpenRouter không được tìm thấy');
-    }
-
-    if (!admin.apps.length) {
-      admin.initializeApp({
-        credential: admin.credential.cert(
-          require(path.resolve(__dirname, '../../serviceAccountKey.json')),
-        ),
-      });
     }
   }
 
