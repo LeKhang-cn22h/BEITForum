@@ -15,6 +15,7 @@ import { ReportPostModule } from './report-post/report-post.module';
 import { NewsModule } from './news/news.module';
 import { ComplaintModule } from './complaint/complaint.module';
 import { FollowModule } from './follow/follow.module';
+import { NotificationModule } from './notification/notification.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -48,6 +49,7 @@ import { FollowModule } from './follow/follow.module';
     VoteModule,
     CloudinaryModule,
     ComplaintModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

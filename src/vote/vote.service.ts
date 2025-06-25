@@ -3,21 +3,29 @@ import { VoteDto } from './dto/vote.dto';
 import { UpdateVoteDto } from './dto/update-vote.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Posts } from 'src/posts/schema/post.schema';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Vote } from './schema/vote.schema';
 import { use } from 'passport';
+import { User } from 'src/auth/schema/user.schema';
+import { NotificationService } from 'src/notification/notification.service';
 
 @Injectable()
 export class VoteService {
   constructor(
     //@InjectModel(Posts.name) private PostsModel: Model<Posts>,
     @InjectModel(Vote.name) private VoteModel: Model<Vote>,
+    @InjectModel(Posts.name) private PostsModel: Model<Posts>,
+    @InjectModel(User.name) private UserModel: Model<User>,
+    private notificationService: NotificationService,
   ) {}
 
   async votes(postId: string, voteDto: VoteDto) {
     try {
+    
       const { userId, type } = voteDto;
       console.log(userId, type);
+
+
       // Lay du lieu cua ca upvote va downvote dong thoi (parallel queries)
       const [upVoteData, downVoteData] = await Promise.all([
         this.VoteModel.findOne({ postId, type: 'upvote' }),
@@ -28,7 +36,25 @@ export class VoteService {
       if (!upVoteData || !downVoteData) {
         throw new Error('Vote data not found for this post');
       }
+      // 1. Lấy ra voteUser va PostOwner
+      const voteUser = await this.UserModel.findById(userId);
+      const postOwner = await this.PostsModel.findById(postId).populate<{userId: User & {_id: Types.ObjectId} }>("userId");
+      
+      // 3. Kiểm tra nếu người comment KHÔNG PHẢI chủ post thì mới gửi thông báo
+      if (postOwner && postOwner.userId && postOwner.userId._id.toString() !== userId.toString()) {
+        const notification = {
+          receiverId: postOwner.userId._id.toString(),
+          title: `${voteUser?.name || 'Người dùng'} đã tương tác với bài viết của bạn`,
+          body: `${voteUser?.username || 'Người dùng'}${voteDto?.type?' thấy bài viết của bạn hữu ích':'không hữu ích'}`,
+          data: {
+            postId,
+            userId,
+          },
+        };
 
+        // Gọi service notification
+        await this.notificationService.createNotification(notification);
+      }      
       // Kiem tra trang thai vote hien tai cua user
       const hasUpvoted = this.hasUserVoted(upVoteData, userId);
       const hasDownvoted = this.hasUserVoted(downVoteData, userId);
