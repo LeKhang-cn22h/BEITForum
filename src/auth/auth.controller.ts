@@ -34,6 +34,7 @@ export class AuthController {
         email: '',
         phone: loginDto.emailOrPhone,
         password: loginDto.password,
+        fcmToken: loginDto.fcmToken
       };
       return this.authService.loginAsPhone(loginData);
     } else {
@@ -41,6 +42,7 @@ export class AuthController {
         email: loginDto.emailOrPhone,
         phone: '',
         password: loginDto.password,
+        fcmToken: loginDto.fcmToken
       };
       return this.authService.loginAsEmail(loginData);
     }

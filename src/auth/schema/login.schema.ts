@@ -14,6 +14,12 @@ export class LoginData {
 
     @Prop({ required: true })
     password: string;
+
+    @IsString()
+    fcmToken: {
+        type: string, // Mảng chuỗi
+        default: [],    // Rất quan trọng để tránh undefined
+    }
 }
 
 export const UserSchema = SchemaFactory.createForClass(LoginData);

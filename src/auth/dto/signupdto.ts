@@ -26,4 +26,5 @@ export class SignUpDto {
     message: 'password must contain at least one number',
   })
   password: string;
+
 }

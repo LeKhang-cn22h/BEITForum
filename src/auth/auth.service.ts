@@ -77,7 +77,7 @@ export class AuthService {
 
   async loginAsPhone(loginData: LoginData) {
     try {
-      const { phone, password } = loginData;
+      const { phone, password, fcmToken } = loginData;
       let user = await this.userModel.findOne({ phone });
       if (!user) {
         throw new UnauthorizedException(
@@ -96,6 +96,9 @@ export class AuthService {
           accessToken: null,
           message: 'Tài khoản của bạn đã bị khóa',
         };
+      }
+       if (fcmToken){
+        this.addFCMToken(user,fcmToken)
       }
       const tokens = await this.generateUserTokens(
         user._id,
@@ -122,7 +125,7 @@ export class AuthService {
     try {
       console.log('Dang nhap bang email');
 
-      const { email, password } = loginData;
+      const { email, password, fcmToken } = loginData;
       let user = await this.userModel.findOne({ email });
       console.log('Da tim theo email');
 
@@ -146,6 +149,10 @@ export class AuthService {
           message: 'Tài khoản của bạn đã bị khóa',
         };
       }
+
+      if (fcmToken){
+        this.addFCMToken(user,fcmToken)
+      }
       const tokens = await this.generateUserTokens(
         user._id,
         user.email,
@@ -166,6 +173,21 @@ export class AuthService {
       throw new InternalServerErrorException(
         'Đã xảy ra lỗi khi đăng nhập: ' + error.message,
       );
+    }
+  }
+
+  async addFCMToken(user,fcmToken){
+    if (!Array.isArray(user.fcmToken)) {
+      console.log("Chua co truong fcm")
+      user.fcmToken = []; // 👈 nếu chưa có, tạo mảng mới
+    }
+    if (!user.fcmToken.includes(fcmToken)){
+        user.fcmToken.push(fcmToken);
+        await user.save();
+        console.log("Lưu FCM token thành công: " + fcmToken);
+    }
+    else{
+      console.log("Lưu FCM token ko thành công");
     }
   }
 
