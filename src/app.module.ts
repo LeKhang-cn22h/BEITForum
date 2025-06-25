@@ -15,6 +15,7 @@ import { ReportPostModule } from './report-post/report-post.module';
 import { NewsModule } from './news/news.module';
 import { ComplaintModule } from './complaint/complaint.module';
 import { FollowModule } from './follow/follow.module';
+import { NotificationModule } from './notification/notification.module';
 import { BigqueryModule } from './bigquery/bigquery.module'; 
 @Module({
   imports: [
@@ -49,7 +50,9 @@ import { BigqueryModule } from './bigquery/bigquery.module';
     VoteModule,
     CloudinaryModule,
     ComplaintModule,
+    NotificationModule,
     BigqueryModule,
+    FollowModule
   ],
   controllers: [AppController],
   providers: [AppService],

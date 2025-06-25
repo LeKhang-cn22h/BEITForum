@@ -11,4 +11,9 @@ export class LoginDto {
     @Matches(/^(?=.*[0-9])/,{ message: 'password must contain at least one number'})
     password: string;
 
+    @IsString()
+    fcmToken: {
+        type: string, // Mảng chuỗi
+        default: [],    // Rất quan trọng để tránh undefined
+    }
 }
