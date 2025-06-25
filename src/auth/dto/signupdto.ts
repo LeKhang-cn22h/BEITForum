@@ -13,6 +13,7 @@ export class SignUpDto {
   @IsString()
   name: string;
 
+  @IsOptional()
   @IsNumberString({}, { message: 'Phone number must contain only numbers' })
   @Matches(/^\d{10,11}$/, { message: 'Phone number must be 10-11 digits' })
   phone: string;
