@@ -15,7 +15,6 @@ lerna-debug.log*
 # Bỏ qua file môi trường bí mật
 .env
 src/firebase/*.json
-
 # OS
 .DS_Store
 
