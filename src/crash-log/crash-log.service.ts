@@ -11,9 +11,9 @@ export class CrashLogService {
   constructor() {
     this.apiKey = process.env.OPENROUTER_API_KEY || '';
 
-    if (!this.apiKey) {
-      throw new Error('API key cho OpenRouter không được tìm thấy');
-    }
+    // if (!this.apiKey) {
+    //   throw new Error('API key cho OpenRouter không được tìm thấy');
+    // }
   }
 
   async analyzeCrash(body: { email: string; userId: string; error: string }) {
