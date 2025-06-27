@@ -18,6 +18,11 @@ import { error } from 'console';
 import { ConfigService } from '@nestjs/config';
 import { BookMark } from 'src/posts/schema/bookmark.schema';
 import { Follow } from 'src/follow/entities/follow.entity';
+import * as nodemailer from 'nodemailer';
+
+import { Otp } from './schema/otp.schema';
+
+
 
 @Injectable()
 export class AuthService {
@@ -27,6 +32,7 @@ export class AuthService {
     private configService: ConfigService,
      @InjectModel(BookMark.name) private BookMarkModel: Model<BookMark>,
      @InjectModel(Follow.name) private FollowModel: Model<Follow>,
+     @InjectModel(Otp.name) private otpModel: Model<Otp>,
 
   ) {}
 
@@ -240,5 +246,53 @@ private async initializeFollow(userId: string) {
     throw new InternalServerErrorException('Failed to initialize bookmark');
   }
 }
+
+
+//gui otp
+  async sendOtp(email: string): Promise<string> {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: this.configService.get<string>('GMAIL_USER'),           //  từ .env
+        pass: this.configService.get<string>('GMAIL_APP_PASSWORD'),   //  từ .env
+      },
+    });
+
+    await transporter.sendMail({
+      from: this.configService.get<string>('GMAIL_USER'),
+      to: email,
+      subject: 'Xác nhận mã OTP',
+      text: `Mã OTP của bạn là: ${otp}`,
+    });
+
+    await this.otpModel.create({
+      email,
+      otp,
+      createdAt: new Date(),
+    });
+
+    return 'OTP sent';
+  }
+
+  async verifyOtpAndResetPassword(email: string, otp: string, newPassword: string) {
+    const record = await this.otpModel.findOne({ email, otp });
+    if (!record) throw new BadRequestException('OTP không hợp lệ hoặc đã hết hạn');
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await this.userModel.updateOne({ email }, { password: hashedPassword });
+    await this.otpModel.deleteMany({ email });
+
+    return 'Mật khẩu đã được đặt lại';
+  }
+
+  async verifyOtpOnly(email: string, otp: string): Promise<boolean> {
+    const record = await this.otpModel.findOne({ email, otp });
+    return !!record;
+  }
+
+
+
 
 }
