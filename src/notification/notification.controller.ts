@@ -17,14 +17,21 @@ export class NotificationController {
     return this.notificationService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.notificationService.findOne(+id);
+  @Get('find/:id')
+  findNotificationGroupByUserId(@Param('id') userId: string) {
+    if (!userId) {
+      return {
+        message: 'userId is required',
+        statusCode: 400,
+      };
+    }
+    return this.notificationService.findNotificationGroupByUserId(userId);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateNotificationDto: UpdateNotificationDto) {
-    return this.notificationService.update(+id, updateNotificationDto);
+  @Patch('readNotification/:id')
+  readNotification(@Param('id') idNotification: string) {
+
+    return this.notificationService.ReadNotification(idNotification);
   }
 
   @Delete(':id')

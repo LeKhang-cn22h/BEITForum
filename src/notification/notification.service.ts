@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { UpdateNotificationDto } from './dto/update-notification.dto';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Types, Model } from 'mongoose';
 import { User } from 'src/auth/schema/user.schema';
 import * as admin from 'firebase-admin';
 import { Notification } from './schema/notification.schema';
@@ -20,7 +20,11 @@ export class NotificationService {
       if (!user) {
         throw new Error('Người nhận không tồn tại');
       }
-
+      
+      const sender = await this.UserModel.findById(data.userId);
+      if (!sender) {
+        throw new Error('Người gửi không tồn tại');
+      }
       // Gửi FCM
       for (const token of user.fcmToken) {
         try {
@@ -47,10 +51,11 @@ export class NotificationService {
 
       // Lưu DB
       await this.NotificationModel.create({
-        userId: receiverId,
+        userReceiveNotificationId: receiverId,
         title,
-        content: `${data.userId} commented on your post`,
+        content: `${sender.name} commented on your post`,
         postId: data.postId,
+        isRead: false,
       });
     }
 
@@ -58,12 +63,26 @@ export class NotificationService {
     return `This action returns all notification`;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} notification`;
+  async findNotificationGroupByUserId(userId: string) {
+    const notifications = await this.NotificationModel
+      .find({ userReceiveNotificationId: userId })    
+      .sort({ createdAt: -1 }); // mới nhất trước
+    return {
+      message: `Danh sách thông báo của userId: ${userId}`,
+      data: notifications,
+    };
   }
 
-  update(id: number, updateNotificationDto: UpdateNotificationDto) {
-    return `This action updates a #${id} notification`;
+  async ReadNotification(idNotification: string) {
+    try {
+      await this.NotificationModel.updateOne(
+        {  _id: new Types.ObjectId(idNotification) },
+        { $set: { isRead: true } }        
+      );
+      return `🔔 Notification with ID ${idNotification} has been marked as read`;
+    } catch (error) {
+      throw new Error(`❌ Error updating notification: ${error.message}`);
+    }
   }
 
   remove(id: number) {

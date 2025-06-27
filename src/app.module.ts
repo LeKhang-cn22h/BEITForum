@@ -15,6 +15,7 @@ import { ReportPostModule } from './report-post/report-post.module';
 import { NewsModule } from './news/news.module';
 import { ComplaintModule } from './complaint/complaint.module';
 import { FollowModule } from './follow/follow.module';
+import { CrashLogModule } from './crash-log/crash-log.module';
 import { NotificationModule } from './notification/notification.module';
 import { BigqueryModule } from './bigquery/bigquery.module'; 
 @Module({
@@ -50,6 +51,7 @@ import { BigqueryModule } from './bigquery/bigquery.module';
     VoteModule,
     CloudinaryModule,
     ComplaintModule,
+    CrashLogModule,
     NotificationModule,
     BigqueryModule,
     FollowModule
