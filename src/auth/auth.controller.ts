@@ -11,6 +11,7 @@ import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/signupdto';
 import { LoginDto } from './dto/logindto';
 import { LoginData } from './schema/login.schema';
+import { BadRequestException } from '@nestjs/common';
 
 @Controller('auth')
 export class AuthController {
@@ -47,4 +48,27 @@ export class AuthController {
       return this.authService.loginAsEmail(loginData);
     }
   }
+
+    @Post('send-otp')
+  async sendOtp(@Body('email') email: string) {
+    return this.authService.sendOtp(email);
+  }
+
+  @Post('reset-password')
+  async resetPassword(
+    @Body('email') email: string,
+    @Body('otp') otp: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    return this.authService.verifyOtpAndResetPassword(email, otp, newPassword);
+  }
+
+    @Post('verify-otp')
+  async verifyOtp(@Body('email') email: string, @Body('otp') otp: string) {
+    const isValid = await this.authService.verifyOtpOnly(email, otp);
+    if (!isValid) throw new BadRequestException('OTP không hợp lệ');
+    return 'OTP hợp lệ';
+  }
+
+
 }
