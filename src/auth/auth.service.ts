@@ -19,38 +19,39 @@ import { ConfigService } from '@nestjs/config';
 import { BookMark } from 'src/posts/schema/bookmark.schema';
 import { Follow } from 'src/follow/entities/follow.entity';
 import * as nodemailer from 'nodemailer';
-
+import { OnModuleInit } from '@nestjs/common';
 import { Otp } from './schema/otp.schema';
 
-
-
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   constructor(
     @InjectModel(User.name) private userModel: Model<User>,
     private jwtService: JwtService,
     private configService: ConfigService,
-     @InjectModel(BookMark.name) private BookMarkModel: Model<BookMark>,
-     @InjectModel(Follow.name) private FollowModel: Model<Follow>,
-     @InjectModel(Otp.name) private otpModel: Model<Otp>,
-
+    @InjectModel(BookMark.name) private BookMarkModel: Model<BookMark>,
+    @InjectModel(Follow.name) private FollowModel: Model<Follow>,
+    @InjectModel(Otp.name) private otpModel: Model<Otp>,
   ) {}
-
+  async onModuleInit() {
+    await this.userModel.syncIndexes();
+  }
   async registerUser(signUpData: SignUpDto) {
     try {
       const { name, phone, email, password } = signUpData;
-
       let user = await this.userModel.findOne({ email });
       if (user) {
         throw new UnauthorizedException('Email đã được sử dụng');
       }
+      console.log(phone);
 
-      let validPhone = await this.userModel.findOne({ phone });
-      if (validPhone) {
-        throw new UnauthorizedException('Số điện thoại đã được sử dụng');
+      if (phone != null) {
+        let validPhone = await this.userModel.findOne({ phone });
+        if (validPhone) {
+          throw new UnauthorizedException('Số điện thoại đã được sử dụng');
+        }
       }
-
       const hashedPassword = await bcrypt.hash(password, 10);
+
       const registedUser = await this.userModel.create({
         email,
         password: hashedPassword,
@@ -58,8 +59,10 @@ export class AuthService {
         phone,
       });
       const savedUser = await registedUser.save();
+
       // Khởi tạo bookmark cho người dùng mới
       await this.initializeBookMark(savedUser._id.toString());
+
       await this.initializeFollow(savedUser._id.toString());
 
       return {
@@ -75,10 +78,8 @@ export class AuthService {
           `Giá trị '${value}' của trường '${field}' đã được sử dụng`,
         );
       }
-      if (error.code = 401){
-        throw new UnauthorizedException(
-          'Tài khoản đã đăng kí',
-        );
+      if ((error.code = 401)) {
+        throw new UnauthorizedException('Tài khoản đã đăng kí');
       }
       throw new InternalServerErrorException(
         'Đã xảy ra lỗi khi đăng ký tài khoản ' + error,
@@ -108,8 +109,8 @@ export class AuthService {
           message: 'Tài khoản của bạn đã bị khóa',
         };
       }
-       if (fcmToken){
-        this.addFCMToken(user,fcmToken)
+      if (fcmToken) {
+        this.addFCMToken(user, fcmToken);
       }
       const tokens = await this.generateUserTokens(
         user._id,
@@ -161,8 +162,8 @@ export class AuthService {
         };
       }
 
-      if (fcmToken){
-        this.addFCMToken(user,fcmToken)
+      if (fcmToken) {
+        this.addFCMToken(user, fcmToken);
       }
       const tokens = await this.generateUserTokens(
         user._id,
@@ -187,18 +188,17 @@ export class AuthService {
     }
   }
 
-  async addFCMToken(user,fcmToken){
+  async addFCMToken(user, fcmToken) {
     if (!Array.isArray(user.fcmToken)) {
-      console.log("Chua co truong fcm")
+      console.log('Chua co truong fcm');
       user.fcmToken = []; // 👈 nếu chưa có, tạo mảng mới
     }
-    if (!user.fcmToken.includes(fcmToken)){
-        user.fcmToken.push(fcmToken);
-        await user.save();
-        console.log("Lưu FCM token thành công: " + fcmToken);
-    }
-    else{
-      console.log("Lưu FCM token ko thành công");
+    if (!user.fcmToken.includes(fcmToken)) {
+      user.fcmToken.push(fcmToken);
+      await user.save();
+      console.log('Lưu FCM token thành công: ' + fcmToken);
+    } else {
+      console.log('Lưu FCM token ko thành công');
     }
   }
 
@@ -218,45 +218,44 @@ export class AuthService {
   }
 
   // khoi tao bookmark cho user khi user moi dang ky
-private async initializeBookMark(userId: string) {
-  try {
-    const bookmarkRecord = new this.BookMarkModel({
-      userId: userId,
-      postId: [],
-    });
-    if(bookmarkRecord) {
-      await bookmarkRecord.save();
+  private async initializeBookMark(userId: string) {
+    try {
+      const bookmarkRecord = new this.BookMarkModel({
+        userId: userId,
+        postId: [],
+      });
+      if (bookmarkRecord) {
+        await bookmarkRecord.save();
+      }
+    } catch (error) {
+      console.error('Error initializing bookmark:', error);
+      throw new InternalServerErrorException('Failed to initialize bookmark');
     }
-  } catch (error) {
-    console.error('Error initializing bookmark:', error);
-    throw new InternalServerErrorException('Failed to initialize bookmark');
   }
-}
-private async initializeFollow(userId: string) {
-  try {
-    const FollowRecord = new this.FollowModel({
-      userId: userId,
-      postId: [],
-    });
-    if(FollowRecord) {
-      await FollowRecord.save();
+  private async initializeFollow(userId: string) {
+    try {
+      const FollowRecord = new this.FollowModel({
+        userId: userId,
+        postId: [],
+      });
+      if (FollowRecord) {
+        await FollowRecord.save();
+      }
+    } catch (error) {
+      console.error('Error initializing bookmark:', error);
+      throw new InternalServerErrorException('Failed to initialize bookmark');
     }
-  } catch (error) {
-    console.error('Error initializing bookmark:', error);
-    throw new InternalServerErrorException('Failed to initialize bookmark');
   }
-}
 
-
-//gui otp
+  //gui otp
   async sendOtp(email: string): Promise<string> {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: this.configService.get<string>('GMAIL_USER'),           //  từ .env
-        pass: this.configService.get<string>('GMAIL_APP_PASSWORD'),   //  từ .env
+        user: this.configService.get<string>('GMAIL_USER'), //  từ .env
+        pass: this.configService.get<string>('GMAIL_APP_PASSWORD'), //  từ .env
       },
     });
 
@@ -276,9 +275,14 @@ private async initializeFollow(userId: string) {
     return 'OTP sent';
   }
 
-  async verifyOtpAndResetPassword(email: string, otp: string, newPassword: string) {
+  async verifyOtpAndResetPassword(
+    email: string,
+    otp: string,
+    newPassword: string,
+  ) {
     const record = await this.otpModel.findOne({ email, otp });
-    if (!record) throw new BadRequestException('OTP không hợp lệ hoặc đã hết hạn');
+    if (!record)
+      throw new BadRequestException('OTP không hợp lệ hoặc đã hết hạn');
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     await this.userModel.updateOne({ email }, { password: hashedPassword });
@@ -291,8 +295,4 @@ private async initializeFollow(userId: string) {
     const record = await this.otpModel.findOne({ email, otp });
     return !!record;
   }
-
-
-
-
 }
