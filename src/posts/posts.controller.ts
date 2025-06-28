@@ -42,6 +42,9 @@ export class PostsController {
     return this.postsService.getPostId(postId);
   }
 
+
+
+
   
   @Post('create')
   @HttpCode(201)
@@ -120,5 +123,10 @@ export class PostsController {
   hidePost(@Param('id') postId: string) {
     return this.postsService.hide(postId);
   }
+
+    // @Get('admin/update-total-posts')
+    // async triggerUpdateTotalPosts() {
+    //   return this.postsService.updateAllUserTotalPosts();
+    // }
 
 }
