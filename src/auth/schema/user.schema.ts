@@ -48,11 +48,16 @@ export class User {
   @Prop({ required: false, unique: false, default: [] })
   skill: Skill[];
 
+  @Prop ({ required: false, unique: false})
+  fcmToken:string[];
+
+  @Prop({ required: false, unique: false, default: Date.now })
+  createdAt: Date;
+
   @Prop({ required: false, unique: false, default: 'user' })
   role: string;
 
-  @Prop({ required: false, unique: false })
-  fcmToken: string[];
+
 }
 
 @Schema()
