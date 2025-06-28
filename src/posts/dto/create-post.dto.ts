@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsString,
   IsOptional,
@@ -28,6 +29,7 @@ export class CreatePostDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
   tags?: string[];
 
   @IsOptional()
