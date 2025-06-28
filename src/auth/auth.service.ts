@@ -21,6 +21,7 @@ import { Follow } from 'src/follow/entities/follow.entity';
 import * as nodemailer from 'nodemailer';
 import { OnModuleInit } from '@nestjs/common';
 import { Otp } from './schema/otp.schema';
+import { formatDateTime } from 'src/utils/date-time.util';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -101,12 +102,10 @@ export class AuthService implements OnModuleInit {
       if (!passwordMatches) {
         throw new UnauthorizedException('Mật khẩu không chính xác');
       }
-      console.log('Ngoài if', user.isBanned);
       if (user.isBanned) {
-        console.log('Trong if', user.isBanned);
         return {
           accessToken: null,
-          message: 'Tài khoản của bạn đã bị khóa',
+          message: `Tài khoản của bạn đã bị khóa đến ngày ${formatDateTime(user.bannedUntil)}`,
         };
       }
       if (fcmToken) {
@@ -158,7 +157,7 @@ export class AuthService implements OnModuleInit {
         console.log('Tài khoản đã bị khóa');
         return {
           accessToken: null,
-          message: 'Tài khoản của bạn đã bị khóa',
+          message: `Tài khoản của bạn đã bị khóa đến ngày ${formatDateTime(user.bannedUntil)}`,
         };
       }
 
