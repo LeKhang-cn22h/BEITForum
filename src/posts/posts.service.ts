@@ -98,6 +98,11 @@ export class PostsService {
       const savedPost = await newPost.save();
 
       await this.initializeVotes(savedPost._id.toString());
+      await this.UserModel.updateOne(
+            { _id: userId },
+            { $inc: { totalPost: 1 } }
+          );
+
 
       return { message: 'Tạo post thành công', savedPost };
     } catch (error) {
@@ -105,7 +110,7 @@ export class PostsService {
       throw new Error('Failed to create new post');
     }
   }
-
+// Lấy danh sách bài viết cho admin
   async getAllPost() {
     try {
       const listPost = await this.PostsModel.find();
@@ -141,11 +146,14 @@ export class PostsService {
       throw new Error('Failed to initialize votes');
     }
   }
+  //lấy danh sách bài viết của user
   async searchPosts(getPostDto: GetPostDto) {
     try {
       const { userId, title, tags, page = 5, limit = 5, postsId } = getPostDto;
 
-      const query: any = {};
+      const query: any = {
+        isHidden: false, // Chỉ lấy các bài viết không bị ẩn
+      };
 
       if (userId) {
         query.userId = userId;
@@ -365,4 +373,46 @@ export class PostsService {
       throw new Error('Failed to get bookmarks');
     }
   }
+
+// // ⚠️ CHẠY 1 LẦN để cập nhật dữ liệu cũ
+// async updateAllUserTotalPosts() {
+//   try {
+//     // Bước 1: Lấy toàn bộ bài viết
+//     const allPosts = await this.PostsModel.find({}, { userId: 1 });
+
+//     // Bước 2: Gom nhóm số bài theo từng user
+//     const userPostCountMap: Record<string, number> = {};
+
+//     for (const post of allPosts) {
+//       const userIdStr = String(post.userId); // ép sang chuỗi để đồng bộ
+//       if (userPostCountMap[userIdStr]) {
+//         userPostCountMap[userIdStr]++;
+//       } else {
+//         userPostCountMap[userIdStr] = 1;
+//       }
+//     }
+
+//     // Bước 3: Cập nhật vào bảng User
+//     const updateResults: string[] = [];
+
+
+//     for (const [userId, count] of Object.entries(userPostCountMap)) {
+//       const result = await this.UserModel.updateOne(
+//         { _id: userId },
+//         { $set: { totalPost: count } }
+//       );
+//       updateResults.push(`✅ User ${userId} có ${count} bài viết`);
+//     }
+
+//     return {
+//       message: 'Đã cập nhật totalPost dựa trên từng bài viết',
+//       updates: updateResults,
+//     };
+//   } catch (error) {
+//     console.error('❌ Lỗi khi cập nhật totalPost:', error);
+//     throw new Error('Failed to update totalPost');
+//   }
+// }
+
+
 }

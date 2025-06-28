@@ -49,6 +49,9 @@ export class User {
 
   @Prop ({ required: false, unique: false})
   fcmToken:string[];
+
+  @Prop({ required: false, unique: false, default: Date.now })
+  createdAt: Date;
 }
 
 @Schema()
