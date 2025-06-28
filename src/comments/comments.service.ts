@@ -34,6 +34,11 @@ export class CommentsService {
         content,
       };
       const createdComment = await this.CommentModel.create(newComment);
+        await this.UserModel.findByIdAndUpdate(
+            userId,
+            { $inc: { totalComment: 1 } } // Tăng 1 comment
+          );
+
       const userComment = await this.UserModel.findById(userId);
       // 2. Lấy bài viết liên quan
       const postOwner = await this.PostsModel.findById(postId).populate<{userId: User & {_id: Types.ObjectId} }>("userId");
@@ -310,4 +315,40 @@ async findByPost(postId: string, page = 1, limit = 5) {
       throw new Error('Failed to delete reply');
     }
   }
+ async updateAllUserTotalComments() {
+  try {
+    // Lấy toàn bộ comment
+    const allComments = await this.CommentModel.find();
+
+    // Dùng Map để đếm số comment theo userId
+    const commentCountMap = new Map<string, number>();
+
+    for (const comment of allComments) {
+      const userId = comment.userId?.toString();
+      if (!userId) continue;
+
+      commentCountMap.set(userId, (commentCountMap.get(userId) || 0) + 1);
+    }
+
+    const updateResults: string[] = [];
+
+    for (const [userId, count] of commentCountMap.entries()) {
+      await this.UserModel.updateOne(
+        { _id: userId },
+        { $set: { totalComment: count } }
+      );
+      updateResults.push(`✅ User ${userId} có ${count} bình luận`);
+    }
+
+    return {
+      message: 'Đã cập nhật totalComment cho các người dùng có comment',
+      results: updateResults,
+    };
+  } catch (error) {
+    console.error('❌ Lỗi khi cập nhật totalComment:', error);
+    throw new Error('Failed to update totalComment');
+  }
+}
+
+
 }

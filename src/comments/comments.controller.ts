@@ -91,4 +91,9 @@ export class CommentsController {
   async removeReply(@Param('id') id: string) {
     await this.commentsService.removeReply(id);
   }
+  @Get('admin/update-total-comments')
+async triggerUpdateTotalComments() {
+  return this.commentsService.updateAllUserTotalComments();
+}
+
 }

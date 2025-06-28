@@ -11,7 +11,7 @@ import {
   Matches,
   MinLength,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 // export class UserDto {
 //   @Prop({ required: false, unique: false })
@@ -104,5 +104,6 @@ export class UserDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
   skill?: string[];
 }

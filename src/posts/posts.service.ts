@@ -98,6 +98,11 @@ export class PostsService {
       const savedPost = await newPost.save();
 
       await this.initializeVotes(savedPost._id.toString());
+      await this.UserModel.updateOne(
+            { _id: userId },
+            { $inc: { totalPost: 1 } }
+          );
+
 
       return { message: 'Tạo post thành công', savedPost };
     } catch (error) {
@@ -105,7 +110,7 @@ export class PostsService {
       throw new Error('Failed to create new post');
     }
   }
-
+// Lấy danh sách bài viết cho admin
   async getAllPost() {
     try {
       const listPost = await this.PostsModel.find();
@@ -141,67 +146,77 @@ export class PostsService {
       throw new Error('Failed to initialize votes');
     }
   }
-  async searchPosts(getPostDto: GetPostDto) {
+
+  async getPosts(getPostDto: GetPostDto) {
     try {
-      const { userId, title, tags, page = 5, limit = 5, postsId } = getPostDto;
-
-      const query: any = {};
-
+      const { userId, title, tags, page = 1, limit = 5, postsId } = getPostDto;
+  
+       const query: any = {
+        isHidden: false, // Chỉ lấy các bài viết không bị ẩn
+      };
+  
       if (userId) {
         query.userId = userId;
       }
-
+  
       if (title) {
         query.title = { $regex: title, $options: 'i' };
       }
-
+  
       if (tags && tags.length > 0) {
         query.tags = { $in: tags };
       }
-      console.log('postsId', postsId);
+  
       if (postsId && postsId.length > 0) {
         query._id = { $in: postsId.map(id => new Types.ObjectId(id)) };
-        console.log("query",query._id)
       }
-
+  
       const skip = (page - 1) * limit;
-
-      const [posts, total] = await Promise.all([
-        this.PostsModel.aggregate([
-          { $match: query },
-          { $sort: { createdAt: -1, _id: -1 } },
-          { $skip: skip },
-          { $limit: limit },
-
-          {
-            $addFields: {
-              userIdObj: { $toObjectId: '$userId' },
-            },
-          },
-          {
-            $lookup: {
-              from: 'users',
-              localField: 'userIdObj',
-              foreignField: '_id',
-              as: 'user',
-            },
-          },
-          {
-            $addFields: {
-              userName: { $arrayElemAt: ['$user.name', 0] },
-              avatar : { $arrayElemAt: ['$user.avatar', 0] },
-            },
-          },
-          { $project: { user: 0, userIdObj: 0 } },
-        ]),
-        this.PostsModel.countDocuments(query)
-          .skip(skip)
-          .limit(limit)
-          .sort({ createdAt: -1 })
-          .exec(),
-        this.PostsModel.countDocuments(query),
+  
+      // Use $facet to get both count and data in a single aggregation
+      const result = await this.PostsModel.aggregate([
+        { $match: query },
+        {
+          $facet: {
+            // Get the total count
+            totalCount: [
+              { $count: "count" }
+            ],
+            // Get the paginated data
+            data: [
+              { $sort: { createdAt: -1, _id: -1 } },
+              { $skip: skip },
+              { $limit: limit },
+              {
+                $addFields: {
+                  userIdObj: { $toObjectId: '$userId' },
+                },
+              },
+              {
+                $lookup: {
+                  from: 'users',
+                  localField: 'userIdObj',
+                  foreignField: '_id',
+                  as: 'user',
+                },
+              },
+              {
+                $addFields: {
+                  userName: { $arrayElemAt: ['$user.name', 0] },
+                  avatar: { $arrayElemAt: ['$user.avatar', 0] },
+                },
+              },
+              { $project: { user: 0, userIdObj: 0 } },
+            ]
+          }
+        }
       ]);
-
+  
+      // Extract results
+      const posts = result[0]?.data || [];
+      const total = result[0]?.totalCount[0]?.count || 0;
+      console.log('Total posts found:', total);
+  
       return {
         posts,
         total,
@@ -365,4 +380,46 @@ export class PostsService {
       throw new Error('Failed to get bookmarks');
     }
   }
+
+// // ⚠️ CHẠY 1 LẦN để cập nhật dữ liệu cũ
+// async updateAllUserTotalPosts() {
+//   try {
+//     // Bước 1: Lấy toàn bộ bài viết
+//     const allPosts = await this.PostsModel.find({}, { userId: 1 });
+
+//     // Bước 2: Gom nhóm số bài theo từng user
+//     const userPostCountMap: Record<string, number> = {};
+
+//     for (const post of allPosts) {
+//       const userIdStr = String(post.userId); // ép sang chuỗi để đồng bộ
+//       if (userPostCountMap[userIdStr]) {
+//         userPostCountMap[userIdStr]++;
+//       } else {
+//         userPostCountMap[userIdStr] = 1;
+//       }
+//     }
+
+//     // Bước 3: Cập nhật vào bảng User
+//     const updateResults: string[] = [];
+
+
+//     for (const [userId, count] of Object.entries(userPostCountMap)) {
+//       const result = await this.UserModel.updateOne(
+//         { _id: userId },
+//         { $set: { totalPost: count } }
+//       );
+//       updateResults.push(`✅ User ${userId} có ${count} bài viết`);
+//     }
+
+//     return {
+//       message: 'Đã cập nhật totalPost dựa trên từng bài viết',
+//       updates: updateResults,
+//     };
+//   } catch (error) {
+//     console.error('❌ Lỗi khi cập nhật totalPost:', error);
+//     throw new Error('Failed to update totalPost');
+//   }
+// }
+
+
 }
