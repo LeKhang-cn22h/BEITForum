@@ -1,15 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+  import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateReportPostDto } from './dto/create-report-post.dto';
 import { UpdateReportPostDto } from './dto/update-report-post.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { ReportPost } from './schema/report-post.schema';
 import { Model, Types } from 'mongoose';
-
+import { AiEvalService } from 'src/ai/ai-eval.service';
 @Injectable()
 export class ReportPostService {
   constructor(
     @InjectModel(ReportPost.name)
     private readonly reportPostModel: Model<ReportPost>,
+    private readonly aiEvalService: AiEvalService, // Inject AI evaluation service
   ) {}
 
   async createReportPost(dto: CreateReportPostDto) {
@@ -48,63 +49,72 @@ export class ReportPostService {
 
 
   async getReportPostById(id: string) {
-    try {
-      const report = await this.reportPostModel
-        .findById(id)
-        .populate({
-          path: 'reportedPostId',
-          select:
-            'title content imageUrls videoUrls tags isPublished totalUpvotes totalDownvotes createdAt updatedAt userId',
-        })
-        .populate({
-          path: 'reporterUserId',
-          select: 'name email',
-        })
-        .exec();
+  try {
+    const report = await this.reportPostModel
+      .findById(id)
+      .populate({
+        path: 'reportedPostId',
+        select:
+          'title content imageUrls videoUrls tags isPublished totalUpvotes totalDownvotes createdAt updatedAt userId',
+      })
+      .populate({
+        path: 'reporterUserId',
+        select: 'name email',
+      })
+      .exec();
 
-      if (!report) {
-        throw new NotFoundException('Report not found');
-      }
+    if (!report) {
+      throw new NotFoundException('Report not found');
+    }
 
-      // Ép kiểu rõ ràng
-      const reportedPost = report.reportedPostId as any;
-      const reporterUser = report.reporterUserId as any;
+    const reportedPost = report.reportedPostId as any;
+    const reporterUser = report.reporterUserId as any;
 
-      const result = {
-        _id: report._id,
-        reason: report.reason,
-        createdAt: report.createdAt,
-        reportedPost: reportedPost
-          ? {
-              _id: reportedPost._id,
-              userId: reportedPost.userId,
-              title: reportedPost.title,
-              content: reportedPost.content,
-              imageUrls: reportedPost.imageUrls,
-              videoUrls: reportedPost.videoUrls,
-              tags: reportedPost.tags,
-              isPublished: reportedPost.isPublished,
-              totalUpvotes: reportedPost.totalUpvotes,
-              totalDownvotes: reportedPost.totalDownvotes,
-              createdAt: reportedPost.createdAt,
-              updatedAt: reportedPost.updatedAt,
-            }
-          : null,
-        reporterUser: reporterUser
-          ? {
-              _id: reporterUser._id,
-              name: reporterUser.name,
-              email: reporterUser.email,
-            }
-          : null,
+    // ✅ Gọi AI nếu chưa có kết quả
+    if (!report.aiAnalysis && reportedPost?.title && reportedPost?.content) {
+      const aiResult = await this.aiEvalService.evaluatePost(
+        report.reason,
+        reportedPost.title,
+        reportedPost.content,
+      );
+
+      report.aiAnalysis = {
+        violationPercentage: aiResult.violationPercentage,
+        reason: aiResult.reason,
+        shouldBan: aiResult.shouldBan,
       };
 
-      return result;
-    } catch (err) {
-      console.error('getReportPostById error:', err);
-      throw new NotFoundException('Invalid ID format or not found');
+      await report.save();
     }
+
+    const result = {
+      _id: report._id,
+      reason: report.reason,
+      createdAt: report.createdAt,
+      reportedPost: reportedPost,
+      aiAnalysis: report.aiAnalysis
+        ? {
+            violationPercentage: report.aiAnalysis.violationPercentage,
+            reason: report.aiAnalysis.reason,
+            shouldBan: report.aiAnalysis.shouldBan,
+          }
+        : null,
+      reporterUser: reporterUser
+        ? {
+            _id: reporterUser._id,
+            name: reporterUser.name,
+            email: reporterUser.email,
+          }
+        : null,
+    };
+
+    return result;
+  } catch (err) {
+    console.error('getReportPostById error:', err);
+    throw new NotFoundException('Invalid ID format or not found');
   }
+}
+
 
   async updateReportPost(id: string, dto: UpdateReportPostDto) {
     const updated = await this.reportPostModel

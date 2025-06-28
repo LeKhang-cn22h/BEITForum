@@ -14,6 +14,21 @@ export class ReportPost extends Document {
   reason: string;
   @Prop()
   createdAt: string;
+
+   @Prop({
+    type: {
+      violationPercentage: Number,
+      reason: String,
+      shouldBan: Boolean,
+    },
+    default: null,
+  })
+  aiAnalysis?: {
+    violationPercentage: number;
+    reason: string;
+    shouldBan: boolean;
+  };
+
 }
 
 export const ReportPostSchema = SchemaFactory.createForClass(ReportPost); 
