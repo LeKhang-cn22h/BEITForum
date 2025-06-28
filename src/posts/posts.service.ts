@@ -143,65 +143,72 @@ export class PostsService {
   }
   async getPosts(getPostDto: GetPostDto) {
     try {
-      const { userId, title, tags, page = 5, limit = 5, postsId } = getPostDto;
-
+      const { userId, title, tags, page = 1, limit = 5, postsId } = getPostDto;
+  
       const query: any = {};
-
+  
       if (userId) {
         query.userId = userId;
       }
-
+  
       if (title) {
         query.title = { $regex: title, $options: 'i' };
       }
-
+  
       if (tags && tags.length > 0) {
         query.tags = { $in: tags };
       }
-      console.log('postsId', postsId);
+  
       if (postsId && postsId.length > 0) {
         query._id = { $in: postsId.map(id => new Types.ObjectId(id)) };
-        console.log("query",query._id)
       }
-
+  
       const skip = (page - 1) * limit;
-
-      const [posts, total] = await Promise.all([
-        this.PostsModel.aggregate([
-          { $match: query },
-          { $sort: { createdAt: -1, _id: -1 } },
-          { $skip: skip },
-          { $limit: limit },
-
-          {
-            $addFields: {
-              userIdObj: { $toObjectId: '$userId' },
-            },
-          },
-          {
-            $lookup: {
-              from: 'users',
-              localField: 'userIdObj',
-              foreignField: '_id',
-              as: 'user',
-            },
-          },
-          {
-            $addFields: {
-              userName: { $arrayElemAt: ['$user.name', 0] },
-              avatar : { $arrayElemAt: ['$user.avatar', 0] },
-            },
-          },
-          { $project: { user: 0, userIdObj: 0 } },
-        ]),
-        this.PostsModel.countDocuments(query)
-          .skip(skip)
-          .limit(limit)
-          .sort({ createdAt: -1 })
-          .exec(),
-        this.PostsModel.countDocuments(query),
+  
+      // Use $facet to get both count and data in a single aggregation
+      const result = await this.PostsModel.aggregate([
+        { $match: query },
+        {
+          $facet: {
+            // Get the total count
+            totalCount: [
+              { $count: "count" }
+            ],
+            // Get the paginated data
+            data: [
+              { $sort: { createdAt: -1, _id: -1 } },
+              { $skip: skip },
+              { $limit: limit },
+              {
+                $addFields: {
+                  userIdObj: { $toObjectId: '$userId' },
+                },
+              },
+              {
+                $lookup: {
+                  from: 'users',
+                  localField: 'userIdObj',
+                  foreignField: '_id',
+                  as: 'user',
+                },
+              },
+              {
+                $addFields: {
+                  userName: { $arrayElemAt: ['$user.name', 0] },
+                  avatar: { $arrayElemAt: ['$user.avatar', 0] },
+                },
+              },
+              { $project: { user: 0, userIdObj: 0 } },
+            ]
+          }
+        }
       ]);
-
+  
+      // Extract results
+      const posts = result[0]?.data || [];
+      const total = result[0]?.totalCount[0]?.count || 0;
+      console.log('Total posts found:', total);
+  
       return {
         posts,
         total,

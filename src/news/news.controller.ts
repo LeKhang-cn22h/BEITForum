@@ -36,7 +36,7 @@ export class NewsController {
 
   @Get('get/:id')
   async findOne(@Param('id') id: string) {
-    console.log('News id: ', id);
+    console.log('Notification id: ', id);
     return await this.newsService.findOne(id);
   }
 
