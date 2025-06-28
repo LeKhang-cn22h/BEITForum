@@ -17,7 +17,8 @@ import { ComplaintModule } from './complaint/complaint.module';
 import { FollowModule } from './follow/follow.module';
 import { CrashLogModule } from './crash-log/crash-log.module';
 import { NotificationModule } from './notification/notification.module';
-import { BigqueryModule } from './bigquery/bigquery.module'; 
+import { BigqueryModule } from './bigquery/bigquery.module';
+import { SkillModule } from './skill/skill.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -54,10 +55,10 @@ import { BigqueryModule } from './bigquery/bigquery.module';
     CrashLogModule,
     NotificationModule,
     BigqueryModule,
-    FollowModule
+    FollowModule,
+    SkillModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
-

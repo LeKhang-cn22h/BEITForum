@@ -14,7 +14,7 @@ export class Notification {
   @Prop({ required: true })
   content: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'posts', required: true })
+  @Prop({ type: Types.ObjectId, ref: 'posts', required: false })
   postId: Types.ObjectId;
 
   @Prop({ default: false })
