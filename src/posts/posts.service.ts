@@ -141,7 +141,7 @@ export class PostsService {
       throw new Error('Failed to initialize votes');
     }
   }
-  async searchPosts(getPostDto: GetPostDto) {
+  async getPosts(getPostDto: GetPostDto) {
     try {
       const { userId, title, tags, page = 5, limit = 5, postsId } = getPostDto;
 

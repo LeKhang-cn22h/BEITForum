@@ -75,7 +75,7 @@ export class PostsController {
   @Post('search')
   @HttpCode(200)
   async getPosts(@Body() getPostDto: GetPostDto) {
-    return this.postsService.searchPosts(getPostDto);
+    return this.postsService.getPosts(getPostDto);
   }
 
   @Patch(':id')
