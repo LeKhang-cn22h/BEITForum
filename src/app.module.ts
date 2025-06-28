@@ -19,6 +19,7 @@ import { CrashLogModule } from './crash-log/crash-log.module';
 import { NotificationModule } from './notification/notification.module';
 import { BigqueryModule } from './bigquery/bigquery.module';
 import { SkillModule } from './skill/skill.module';
+import { TagsModule } from './tags/tags.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -57,6 +58,7 @@ import { SkillModule } from './skill/skill.module';
     BigqueryModule,
     FollowModule,
     SkillModule,
+    TagsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
