@@ -10,12 +10,13 @@ import {
   UseInterceptors,
   UploadedFiles,
   NotFoundException,
+  Put,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { VoteDto } from './dto/vote.dto';
-import { Posts } from './schema/post.schema'; 
+import { Posts } from './schema/post.schema';
 import { HttpCode } from '@nestjs/common';
 import { UseGuards } from '@nestjs/common';
 import { get } from 'mongoose';
@@ -27,8 +28,7 @@ import {
 
 @Controller('posts')
 export class PostsController {
-  constructor(private readonly postsService: PostsService) { }
-
+  constructor(private readonly postsService: PostsService) {}
 
   @Get('single/:postId')
   @HttpCode(200)
@@ -42,10 +42,6 @@ export class PostsController {
     return this.postsService.getPostId(postId);
   }
 
-
-
-
-  
   @Post('create')
   @HttpCode(201)
   @UseInterceptors(
@@ -65,7 +61,6 @@ export class PostsController {
     console.log(createPostDto);
     return await this.postsService.createNewPost(createPostDto, files);
   }
-  
 
   @Post('vote/:postId')
   @HttpCode(200)
@@ -74,17 +69,30 @@ export class PostsController {
     //return this.postsService.votes(postId, voteDto);
   }
 
-  
   @Post('search')
   @HttpCode(200)
   async getPosts(@Body() getPostDto: GetPostDto) {
     return this.postsService.getPosts(getPostDto);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @HttpCode(HttpStatus.OK)
-  update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
-    return this.postsService.updatePost(id, updatePostDto);
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'newImageUrls', maxCount: 10 },
+      { name: 'newVideoUrls', maxCount: 10 },
+    ]),
+  ) // 'images' là tên field form-data
+  async update(
+    @Param('id') id: string,
+    @Body() updatePostDto: UpdatePostDto,
+    @UploadedFiles()
+    files: {
+      newImageUrls?: Express.Multer.File[];
+      newVideoUrls?: Express.Multer.File[];
+    },
+  ) {
+    return this.postsService.updatePost(id, updatePostDto, files);
   }
 
   @Delete(':id')
@@ -124,9 +132,8 @@ export class PostsController {
     return this.postsService.hide(postId);
   }
 
-    // @Get('admin/update-total-posts')
-    // async triggerUpdateTotalPosts() {
-    //   return this.postsService.updateAllUserTotalPosts();
-    // }
-
+  // @Get('admin/update-total-posts')
+  // async triggerUpdateTotalPosts() {
+  //   return this.postsService.updateAllUserTotalPosts();
+  // }
 }
