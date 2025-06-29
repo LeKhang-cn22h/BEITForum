@@ -1,4 +1,4 @@
-  import { Injectable, NotFoundException } from '@nestjs/common';
+  import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateReportPostDto } from './dto/create-report-post.dto';
 import { UpdateReportPostDto } from './dto/update-report-post.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -109,10 +109,22 @@ export class ReportPostService {
     };
 
     return result;
-  } catch (err) {
-    console.error('getReportPostById error:', err);
-    throw new NotFoundException('Invalid ID format or not found');
+ } catch (err) {
+  console.error('❌ getReportPostById error:', err);
+
+  if (err instanceof NotFoundException) {
+    throw err;
   }
+
+  // Ghi log loại lỗi chi tiết hơn
+  if (err instanceof Error) {
+    throw new InternalServerErrorException(`Lỗi AI: ${err.message}`);
+  }
+
+  throw new InternalServerErrorException('Lỗi phân tích AI hoặc phản hồi không hợp lệ');
+}
+
+  
 }
 
 
