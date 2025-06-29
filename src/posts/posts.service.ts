@@ -160,7 +160,7 @@ export class PostsService {
       };
 
       if (userId) {
-        query.userId = userId;
+        query.userId = userId; 
       }
 
       if (title) {
@@ -402,7 +402,7 @@ export class PostsService {
         throw new Error('Post not found');
       }
 
-      return { success: true, message: 'Post hidden successfully', post };
+      return { success: true, message: 'Post hidden successfully'};
     } catch (error) {
       console.error('Error hiding post:', error);
       throw new Error('Failed to hide post');
