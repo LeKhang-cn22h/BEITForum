@@ -8,73 +8,84 @@ export class AiEvalService {
   constructor(private readonly configService: ConfigService) {}
 
   async evaluatePost(reason: string, title: string, content: string) {
-    const API_KEY = this.configService.get<string>('CHECK_REPORT');
-    const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+  const API_KEY = this.configService.get<string>('CHECK_REPORT');
+  const API_URL = 'https://openrouter.ai/v1/chat/completions';
+  const prompt = `
+You are an AI content moderator. I will provide a report reason, post title, and post content.
 
-   const prompt = `
-Bạn là một hệ thống AI kiểm duyệt nội dung bài viết trong diễn đàn sinh viên. Nhiệm vụ của bạn là:
+Your task is:
 
-1. Đọc kỹ **lý do người dùng tố cáo** bài viết.
-2. Phân tích **tiêu đề** và **nội dung** bài viết để xác định xem nội dung có **vi phạm đúng theo lý do đó hay không**.
-3. Đánh giá mức độ vi phạm và trả về kết quả **dưới dạng JSON hợp lệ**, theo mẫu bên dưới.
-
-=== YÊU CẦU JSON OUTPUT ===
-Trả lời phải đúng theo cấu trúc sau (không giải thích, không thêm văn bản ngoài JSON):
+1. Analyze whether the content violates the given reason (e.g., offensive language, harassment, spam, etc.).
+2. Respond **only** in the following JSON format:
 
 {
-  "violationPercentage": <số nguyên từ 0 đến 100>,  // mức độ vi phạm so với lý do
-  "reason": "<1 câu ngắn gọn giải thích tại sao>",
-  "shouldBan": <true nếu violationPercentage >= 75, ngược lại false>
+  "violationPercentage": (a number from 0 to 100),
+  "reason": (a short sentence explaining the result),
+  "shouldBan": true if violationPercentage >= 75, otherwise false
 }
 
-=== HƯỚNG DẪN ĐÁNH GIÁ ===
-- Nếu tiêu đề và nội dung **không liên quan gì đến lý do tố cáo** → violationPercentage = 0.
-- Nếu bài viết **có dấu hiệu một phần vi phạm** lý do → violationPercentage từ 1 đến 74.
-- Nếu bài viết **rõ ràng và nghiêm trọng vi phạm** lý do → violationPercentage từ 75 đến 100.
-- Trả về shouldBan bằng true nếu vi phạm từ 75% trở lên.
+--- Post Information ---
 
-=== DỮ LIỆU PHÂN TÍCH ===
+Report reason: ${reason}
 
-Lý do tố cáo: ${reason}
+Title: ${title}
 
-Tiêu đề bài viết: ${title}
+Content: ${content}
 
-Nội dung bài viết: ${content}
-
-=== LƯU Ý QUAN TRỌNG ===
-- Chỉ trả lời JSON, không thêm bất kỳ văn bản nào bên ngoài.
-- Phân tích phải chính xác theo dữ liệu đã cung cấp.
-- Không bịa thêm dữ kiện ngoài nội dung và lý do đã cho.
+Respond **strictly in JSON** format without any explanation.
 `;
 
 
-
+  try {
     const response = await axios.post(
       API_URL,
       {
-        model: 'mistralai/mistral-7b-instruct', 
+        model: 'google/gemma-3-4b-it:free',
         messages: [{ role: 'user', content: prompt }],
       },
       {
         headers: {
-          Authorization: `Bearer ${API_KEY}`, // đính kèm key
+          Authorization: `Bearer ${API_KEY}`,
           'Content-Type': 'application/json',
         },
       },
     );
 
-    const aiText = response.data.choices[0].message.content;
+    console.log('🤖 AI full response:', JSON.stringify(response.data, null, 2));
+
+    if (!response.data || !response.data.choices || response.data.choices.length === 0) {
+      console.warn('⚠️ AI không trả về choices.');
+      return {
+        violationPercentage: 0,
+        reason: 'AI không trả lời',
+        shouldBan: false,
+      };
+    }
+
+    const aiText =
+      response.data.choices[0].message?.content ??
+      response.data.choices[0].text ??
+      '';
 
     try {
       const result = JSON.parse(aiText);
       return result;
     } catch (err) {
+      console.warn('⚠️ JSON.parse lỗi, nội dung:', aiText);
       return {
         violationPercentage: 0,
-        reason: 'Không thể phân tích',
+        reason: 'Phản hồi AI không hợp lệ',
         shouldBan: false,
         raw: aiText,
       };
     }
+  } catch (err: any) {
+    console.error('❌ Lỗi khi gọi API AI:', err.response?.data || err.message);
+    return {
+      violationPercentage: 0,
+      reason: 'Lỗi khi gọi AI',
+      shouldBan: false,
+    };  
   }
+}
 }
