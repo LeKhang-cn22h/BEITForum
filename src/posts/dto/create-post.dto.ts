@@ -19,11 +19,13 @@ export class CreatePostDto {
   content: string;
 
   @IsOptional()
-  @IsString()
+  @IsString({ each: true })
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
   imageUrls?: string[];
 
   @IsOptional()
-  @IsString()
+  @IsString({ each: true })
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
   videoUrls?: string[];
 
   @IsOptional()

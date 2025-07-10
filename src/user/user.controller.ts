@@ -1,5 +1,17 @@
-import { Controller, Get, Post, Put, Body, Patch, Param, Delete, 
-  UseInterceptors, UploadedFile, Optional,BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseInterceptors,
+  UploadedFile,
+  Optional,
+  BadRequestException,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserDto } from './dto/userdto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -28,15 +40,14 @@ export class UserController {
     @Body() updateUserDto: UpdateUserDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    console.log(updateUserDto)
+    console.log(updateUserDto);
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('ID không hợp lệ');
     }
     console.log('Uploaded files:', file);
 
-    return this.userService.updateUser(id, updateUserDto,file);
+    return this.userService.updateUser(id, updateUserDto, file);
   }
-
 
   @Post()
   getUserInfo(@Body() createUserDto: UserDto) {
@@ -44,11 +55,15 @@ export class UserController {
   }
 
   @Patch('ban/:id')
-  async banUser(
-    @Param('id') id: string,
-    @Body() banDto: BanUserDto
-  ) {
+  async banUser(@Param('id') id: string, @Body() banDto: BanUserDto) {
     return this.userService.banUser(id, banDto.durationInDays);
   }
 
+  @Put('signOut/:userId/:fcmToken')
+  async signOut(
+    @Param('userId') userId: string,
+    @Param('fcmToken') fcmToken: string,
+  ) {
+    return await this.userService.signOut(userId, fcmToken);
+  }
 }

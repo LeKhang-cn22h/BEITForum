@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { Posts } from './schema/post.schema';
@@ -99,10 +104,9 @@ export class PostsService {
 
       await this.initializeVotes(savedPost._id.toString());
       await this.UserModel.updateOne(
-            { _id: userId },
-            { $inc: { totalPost: 1 } }
-          );
-
+        { _id: userId },
+        { $inc: { totalPost: 1 } },
+      );
 
       return { message: 'Tạo post thành công', savedPost };
     } catch (error) {
@@ -110,7 +114,7 @@ export class PostsService {
       throw new Error('Failed to create new post');
     }
   }
-// Lấy danh sách bài viết cho admin
+  // Lấy danh sách bài viết cho admin
   async getAllPost() {
     try {
       const listPost = await this.PostsModel.find();
@@ -150,38 +154,36 @@ export class PostsService {
   async getPosts(getPostDto: GetPostDto) {
     try {
       const { userId, title, tags, page = 1, limit = 5, postsId } = getPostDto;
-  
-       const query: any = {
+
+      const query: any = {
         isHidden: false, // Chỉ lấy các bài viết không bị ẩn
       };
-  
+
       if (userId) {
-        query.userId = userId;
+        query.userId = userId; 
       }
-  
+
       if (title) {
         query.title = { $regex: title, $options: 'i' };
       }
-  
+
       if (tags && tags.length > 0) {
         query.tags = { $in: tags };
       }
-  
+
       if (postsId && postsId.length > 0) {
-        query._id = { $in: postsId.map(id => new Types.ObjectId(id)) };
+        query._id = { $in: postsId.map((id) => new Types.ObjectId(id)) };
       }
-  
+
       const skip = (page - 1) * limit;
-  
+
       // Use $facet to get both count and data in a single aggregation
       const result = await this.PostsModel.aggregate([
         { $match: query },
         {
           $facet: {
             // Get the total count
-            totalCount: [
-              { $count: "count" }
-            ],
+            totalCount: [{ $count: 'count' }],
             // Get the paginated data
             data: [
               { $sort: { createdAt: -1, _id: -1 } },
@@ -207,16 +209,16 @@ export class PostsService {
                 },
               },
               { $project: { user: 0, userIdObj: 0 } },
-            ]
-          }
-        }
+            ],
+          },
+        },
       ]);
-  
+
       // Extract results
       const posts = result[0]?.data || [];
       const total = result[0]?.totalCount[0]?.count || 0;
       console.log('Total posts found:', total);
-  
+
       return {
         posts,
         total,
@@ -229,19 +231,19 @@ export class PostsService {
       throw new Error('Failed to search posts');
     }
   }
-// Lấy thông tin chi tiết của một bài viết theo ID
+  // Lấy thông tin chi tiết của một bài viết theo ID
   async getPostId(postId: string) {
     try {
       const post = await this.PostsModel.aggregate([
-        { $match: { _id: new Types.ObjectId(postId) } }, 
+        { $match: { _id: new Types.ObjectId(postId) } },
         {
           $addFields: {
-            userIdObj: { $toObjectId: '$userId' }, 
+            userIdObj: { $toObjectId: '$userId' },
           },
         },
         {
           $lookup: {
-            from: 'users', 
+            from: 'users',
             localField: 'userIdObj',
             foreignField: '_id',
             as: 'user',
@@ -249,17 +251,17 @@ export class PostsService {
         },
         {
           $addFields: {
-            userName: { $arrayElemAt: ['$user.name', 0] }, 
-            avatar: { $arrayElemAt: ['$user.avatar', 0] }, 
+            userName: { $arrayElemAt: ['$user.name', 0] },
+            avatar: { $arrayElemAt: ['$user.avatar', 0] },
           },
         },
-        { $project: { user: 0, userIdObj: 0 } }, 
+        { $project: { user: 0, userIdObj: 0 } },
       ]);
-  
+
       if (!post || post.length === 0) {
         throw new Error('Post not found');
       }
-  
+
       return {
         post: post[0], // Return the first matched post
         message: 'Post retrieved successfully',
@@ -269,22 +271,98 @@ export class PostsService {
       throw new Error('Failed to get post by ID');
     }
   }
-  async updatePost(postId: string, updateData: Partial<CreatePostDto>) {
+  async updatePost(
+    postId: string,
+    updatePostDto: UpdatePostDto,
+    files?: {
+      newImageUrls?: Express.Multer.File[];
+      newVideoUrls?: Express.Multer.File[];
+    },
+  ) {
     try {
-      const updatedPost = await this.PostsModel.findByIdAndUpdate(
-        postId,
-        updateData,
-        { new: true },
-      );
+      const post = await this.PostsModel.findById(postId);
+      if (!post) throw new NotFoundException('Không tìm thấy post');
 
-      if (!updatedPost) {
-        throw new Error('Post not found');
+      const updateFields: Partial<UpdatePostDto> = {};
+
+      // 1. Xử lý upload ảnh mới nếu có
+      if (files?.newImageUrls && files.newImageUrls.length > 0) {
+        try {
+          const uploadResults = await Promise.all(
+            files.newImageUrls.map((file) =>
+              this.cloudinaryService.uploadFile(postId, 'post', file),
+            ),
+          );
+
+          const newUploadedUrls = uploadResults.map(
+            (result) => result.secure_url,
+          );
+
+          // ✅ Merge URL cũ client giữ lại + URL mới upload
+          updatePostDto.imageUrls = [
+            ...(updatePostDto.imageUrls || []), // URL cũ client gửi
+            ...newUploadedUrls, // URL mới upload
+          ];
+
+          console.log('Các ảnh đã tải lên:', updateFields.imageUrls);
+        } catch (error) {
+          console.error('Lỗi Cloudinary:', error);
+          throw new BadRequestException('Lỗi khi tải ảnh lên Cloudinary');
+        }
       }
 
-      return updatedPost;
+      // Upload video lên Cloudinary
+      if (files?.newVideoUrls && files.newVideoUrls.length > 0) {
+        try {
+          const uploadedVideos = await Promise.all(
+            files.newVideoUrls.map((file) =>
+              this.cloudinaryService.uploadFile(postId, 'post', file),
+            ),
+          );
+          const newUploadedUrls = uploadedVideos.map(
+            (result) => result.secure_url,
+          );
+
+          // ✅ Merge URL cũ client giữ lại + URL mới upload
+          updatePostDto.videoUrls = [
+            ...(updatePostDto.videoUrls || []), // URL cũ client gửi
+            ...newUploadedUrls, // URL mới upload
+          ];
+          console.log('Video đã upload:', updateFields.videoUrls);
+        } catch (err) {
+          console.error('Lỗi khi upload video:', err);
+          throw new BadRequestException('Không thể upload video');
+        }
+      }
+
+      // 3. Xử lý các trường text
+      if (updatePostDto.title !== undefined)
+        updateFields.title = updatePostDto.title;
+      if (updatePostDto.content !== undefined)
+        updateFields.content = updatePostDto.content;
+      if (updatePostDto.tags !== undefined)
+        updateFields.tags = updatePostDto.tags;
+      else updateFields.tags = [];
+      if (updatePostDto.isPublished !== undefined)
+        updateFields.isPublished = updatePostDto.isPublished;
+      if (updatePostDto.imageUrls !== undefined)
+        updateFields.imageUrls = updatePostDto.imageUrls;
+      else updateFields.imageUrls = [];
+
+      if (updatePostDto.videoUrls !== undefined)
+        updateFields.videoUrls = updatePostDto.videoUrls;
+      else updateFields.videoUrls = [];
+      // 6. Thực hiện update DB
+      console.log('Video đã upload:', updateFields.videoUrls);
+      console.log('Image đã upload:', updateFields.imageUrls);
+      console.log('updateFields:', updateFields);
+
+      await this.PostsModel.updateOne({ _id: postId }, { $set: updateFields });
+
+      return { message: 'Cập nhật post thành công' };
     } catch (error) {
-      console.error('Error updating post:', error);
-      throw new Error('Failed to update post');
+      console.error('Lỗi update post:', error);
+      throw new InternalServerErrorException('Không thể cập nhật post');
     }
   }
 
@@ -297,10 +375,10 @@ export class PostsService {
       await this.VoteModel.deleteMany({ postId });
 
       await this.BookMarkModel.updateMany(
-        { postId: { $in: [postId] } }, 
-        { $pull: { postId } }
+        { postId: { $in: [postId] } },
+        { $pull: { postId } },
       );
-  
+
       return {
         success: true,
         message: 'Post deleted successfully',
@@ -311,7 +389,7 @@ export class PostsService {
       throw new Error('Failed to delete post');
     }
   }
-  
+
   async hide(postId: string) {
     try {
       const post = await this.PostsModel.findByIdAndUpdate(
@@ -324,7 +402,7 @@ export class PostsService {
         throw new Error('Post not found');
       }
 
-      return { success: true, message: 'Post hidden successfully', post };
+      return { success: true, message: 'Post hidden successfully'};
     } catch (error) {
       console.error('Error hiding post:', error);
       throw new Error('Failed to hide post');
@@ -380,46 +458,42 @@ export class PostsService {
       throw new Error('Failed to get bookmarks');
     }
   }
+  // // ⚠️ CHẠY 1 LẦN để cập nhật dữ liệu cũ
+  // async updateAllUserTotalPosts() {
+  //   try {
+  //     // Bước 1: Lấy toàn bộ bài viết
+  //     const allPosts = await this.PostsModel.find({}, { userId: 1 });
 
-// // ⚠️ CHẠY 1 LẦN để cập nhật dữ liệu cũ
-// async updateAllUserTotalPosts() {
-//   try {
-//     // Bước 1: Lấy toàn bộ bài viết
-//     const allPosts = await this.PostsModel.find({}, { userId: 1 });
+  //     // Bước 2: Gom nhóm số bài theo từng user
+  //     const userPostCountMap: Record<string, number> = {};
 
-//     // Bước 2: Gom nhóm số bài theo từng user
-//     const userPostCountMap: Record<string, number> = {};
+  //     for (const post of allPosts) {
+  //       const userIdStr = String(post.userId); // ép sang chuỗi để đồng bộ
+  //       if (userPostCountMap[userIdStr]) {
+  //         userPostCountMap[userIdStr]++;
+  //       } else {
+  //         userPostCountMap[userIdStr] = 1;
+  //       }
+  //     }
 
-//     for (const post of allPosts) {
-//       const userIdStr = String(post.userId); // ép sang chuỗi để đồng bộ
-//       if (userPostCountMap[userIdStr]) {
-//         userPostCountMap[userIdStr]++;
-//       } else {
-//         userPostCountMap[userIdStr] = 1;
-//       }
-//     }
+  //     // Bước 3: Cập nhật vào bảng User
+  //     const updateResults: string[] = [];
 
-//     // Bước 3: Cập nhật vào bảng User
-//     const updateResults: string[] = [];
+  //     for (const [userId, count] of Object.entries(userPostCountMap)) {
+  //       const result = await this.UserModel.updateOne(
+  //         { _id: userId },
+  //         { $set: { totalPost: count } }
+  //       );
+  //       updateResults.push(`✅ User ${userId} có ${count} bài viết`);
+  //     }
 
-
-//     for (const [userId, count] of Object.entries(userPostCountMap)) {
-//       const result = await this.UserModel.updateOne(
-//         { _id: userId },
-//         { $set: { totalPost: count } }
-//       );
-//       updateResults.push(`✅ User ${userId} có ${count} bài viết`);
-//     }
-
-//     return {
-//       message: 'Đã cập nhật totalPost dựa trên từng bài viết',
-//       updates: updateResults,
-//     };
-//   } catch (error) {
-//     console.error('❌ Lỗi khi cập nhật totalPost:', error);
-//     throw new Error('Failed to update totalPost');
-//   }
-// }
-
-
+  //     return {
+  //       message: 'Đã cập nhật totalPost dựa trên từng bài viết',
+  //       updates: updateResults,
+  //     };
+  //   } catch (error) {
+  //     console.error('❌ Lỗi khi cập nhật totalPost:', error);
+  //     throw new Error('Failed to update totalPost');
+  //   }
+  // }
 }

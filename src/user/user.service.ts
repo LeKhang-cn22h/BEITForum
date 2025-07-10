@@ -16,6 +16,7 @@ import { error } from 'console';
 import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
 import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 import { v2 as cloudinary } from 'cloudinary';
+import { messaging } from 'firebase-admin';
 
 @Injectable()
 export class UserService {
@@ -102,25 +103,32 @@ export class UserService {
         const bcrypt = require('bcrypt');
         updateData.password = await bcrypt.hash(password, 10);
       }
-    if (typeof updateUserDto.skill === 'string') {
-      try {
-        console.log("Sau khi parse skill "+JSON.parse(updateUserDto.skill))
-        updateData.skill = JSON.parse(updateUserDto.skill);
-        console.log(updateData)
-      } catch (err) {
-        throw new BadRequestException('Trường skills không phải là JSON hợp lệ');
+      if (typeof updateUserDto.skill === 'string') {
+        try {
+          console.log('Sau khi parse skill ' + JSON.parse(updateUserDto.skill));
+          updateData.skill = JSON.parse(updateUserDto.skill);
+          console.log(updateData);
+        } catch (err) {
+          throw new BadRequestException(
+            'Trường skills không phải là JSON hợp lệ',
+          );
+        }
       }
-    }
 
-     if (typeof updateUserDto.certificate === 'string') {
-      try {
-        console.log("Sau khi parse certificate "+JSON.parse(updateUserDto.certificate))
-        updateData.certificate = JSON.parse(updateUserDto.certificate);
-        console.log(updateData)
-      } catch (err) {
-        throw new BadRequestException('Trường Certificate không phải là JSON hợp lệ');
+      if (typeof updateUserDto.certificate === 'string') {
+        try {
+          console.log(
+            'Sau khi parse certificate ' +
+              JSON.parse(updateUserDto.certificate),
+          );
+          updateData.certificate = JSON.parse(updateUserDto.certificate);
+          console.log(updateData);
+        } catch (err) {
+          throw new BadRequestException(
+            'Trường Certificate không phải là JSON hợp lệ',
+          );
+        }
       }
-    }
 
       if (Object.keys(updateData).length > 0) {
         Object.assign(user, updateData);
@@ -149,5 +157,17 @@ export class UserService {
       message: `User bị khóa đến ${bannedUntil.toISOString()}`,
       bannedUntil,
     };
+  }
+
+  async signOut(userId: string, fcmToken: string) {
+    const user = (await this.userModel.findById(userId)) as UserDocument;
+    if (!user) throw new NotFoundException('Không tìm thấy user');
+    const listFcmToken = user.fcmToken ?? [];
+    const result = listFcmToken.filter((item) => item !== fcmToken);
+    await this.userModel.updateOne(
+      { _id: userId },
+      { $set: { fcmToken: result } },
+    );
+    return { message: 'Đăng xuất tài khoản thành công' };
   }
 }
