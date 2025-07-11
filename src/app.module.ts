@@ -20,6 +20,7 @@ import { NotificationModule } from './notification/notification.module';
 import { BigqueryModule } from './bigquery/bigquery.module';
 import { SkillModule } from './skill/skill.module';
 import { TagsModule } from './tags/tags.module';
+import { ChatAiModule } from './chat-ai/chat-ai.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -59,6 +60,7 @@ import { TagsModule } from './tags/tags.module';
     FollowModule,
     SkillModule,
     TagsModule,
+    ChatAiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
