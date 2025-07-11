@@ -9,7 +9,7 @@ export class AiEvalService {
 
   async evaluatePost(reason: string, title: string, content: string) {
   const API_KEY = this.configService.get<string>('CHECK_REPORT');
-  const API_URL = 'https://openrouter.ai/v1/chat/completions';
+  const API_URL = 'https://openrouter.ai/api/v1/chat/completions';
   const prompt = `
 You are an AI content moderator. I will provide a report reason, post title, and post content.
 
@@ -40,7 +40,7 @@ Respond **strictly in JSON** format without any explanation.
     const response = await axios.post(
       API_URL,
       {
-        model: 'google/gemma-3-4b-it:free',
+        model: 'cognitivecomputations/dolphin-mistral-24b-venice-edition:free',
         messages: [{ role: 'user', content: prompt }],
       },
       {
@@ -62,23 +62,31 @@ Respond **strictly in JSON** format without any explanation.
       };
     }
 
+    // Lấy nội dung phản hồi AI
     const aiText =
-      response.data.choices[0].message?.content ??
-      response.data.choices[0].text ??
-      '';
+  response.data.choices[0].message?.content ?? response.data.choices[0].text ?? '';
 
-    try {
-      const result = JSON.parse(aiText);
-      return result;
-    } catch (err) {
-      console.warn('⚠️ JSON.parse lỗi, nội dung:', aiText);
-      return {
-        violationPercentage: 0,
-        reason: 'Phản hồi AI không hợp lệ',
-        shouldBan: false,
-        raw: aiText,
-      };
-    }
+try {
+  // Làm sạch markdown ```json ``` nếu có
+  const cleanedText = aiText
+    .replace(/^```json\s*/i, '')  // bỏ dòng đầu ```json
+    .replace(/^```\s*/i, '')      // hoặc ``` nếu không có json
+    .replace(/```$/i, '')         // bỏ dòng cuối ```
+    .trim();
+
+  const result = JSON.parse(cleanedText);
+
+  return result;
+} catch (err) {
+  console.warn('⚠️ JSON.parse lỗi, nội dung:', aiText);
+  return {
+    violationPercentage: 0,
+    reason: 'Phản hồi AI không hợp lệ',
+    shouldBan: false,
+    raw: aiText,
+  };
+}
+
   } catch (err: any) {
     console.error('❌ Lỗi khi gọi API AI:', err.response?.data || err.message);
     return {
