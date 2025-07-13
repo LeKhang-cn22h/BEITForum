@@ -42,6 +42,12 @@ export class PostsController {
     return this.postsService.getPostId(postId);
   }
 
+  @Get('getall')
+  async getAllPost() {
+    console.log('Đã lấy ra tất cả tin tức');
+    return await this.postsService.getAllPost();
+  }
+
   @Post('create')
   @HttpCode(201)
   @UseInterceptors(
