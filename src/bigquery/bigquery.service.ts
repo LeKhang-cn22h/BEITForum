@@ -41,43 +41,43 @@ export class BigqueryService {
 
   async getEventDataLast7Days(): Promise<any[]> {
     const query = `
-  -- Lấy số lần truy cập mỗi màn hình
-  WITH screen_views AS (
+    -- Lấy số lần truy cập mỗi màn hình
+    WITH screen_views AS (
+      SELECT
+        (SELECT value.string_value FROM UNNEST(event_params) WHERE key = "firebase_screen") AS screen_name,
+        COUNT(*) AS view_count
+      FROM \`itforum-e2eea.analytics_492305155.events_*\`
+      WHERE event_name = "screen_view"
+        AND PARSE_DATE('%Y%m%d', _TABLE_SUFFIX) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+      GROUP BY screen_name
+    ),
+
+    -- Lấy tổng thời gian ở mỗi màn hình
+    screen_exits AS (
+      SELECT
+        (SELECT value.string_value FROM UNNEST(event_params) WHERE key = "screen_name") AS screen_name,
+        SUM((SELECT value.int_value FROM UNNEST(event_params) WHERE key = "duration_seconds")) AS total_duration
+      FROM \`itforum-e2eea.analytics_492305155.events_*\`
+      WHERE event_name = "screen_exit"
+        AND PARSE_DATE('%Y%m%d', _TABLE_SUFFIX) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+      GROUP BY screen_name
+    )
+
+    -- Gộp 2 bảng lại theo screen_name
     SELECT
-      (SELECT value.string_value FROM UNNEST(event_params) WHERE key = "firebase_screen") AS screen_name,
-      COUNT(*) AS view_count
-    FROM \`itforum-e2eea.analytics_492305155.events_*\`
-    WHERE event_name = "screen_view"
-      AND PARSE_DATE('%Y%m%d', _TABLE_SUFFIX) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
-    GROUP BY screen_name
-  ),
-
-  -- Lấy tổng thời gian ở mỗi màn hình
-  screen_exits AS (
-    SELECT
-      (SELECT value.string_value FROM UNNEST(event_params) WHERE key = "screen_name") AS screen_name,
-      SUM((SELECT value.int_value FROM UNNEST(event_params) WHERE key = "duration_seconds")) AS total_duration
-    FROM \`itforum-e2eea.analytics_492305155.events_*\`
-    WHERE event_name = "screen_exit"
-      AND PARSE_DATE('%Y%m%d', _TABLE_SUFFIX) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
-    GROUP BY screen_name
-  )
-
-  -- Gộp 2 bảng lại theo screen_name
-  SELECT
-    v.screen_name,
-    v.view_count,
-    COALESCE(e.total_duration, 0) AS total_duration_seconds
-  FROM screen_views v
-  LEFT JOIN screen_exits e ON v.screen_name = e.screen_name
-  WHERE v.screen_name IS NOT NULL
-    AND NOT STARTS_WITH(v.screen_name, "detail_")  -- 🔥 Loại bỏ screen_name bắt đầu với "detail_"
-  ORDER BY v.view_count DESC
-`;
-
+      v.screen_name,
+      v.view_count,
+      COALESCE(e.total_duration, 0) AS total_duration_seconds
+    FROM screen_views v
+    LEFT JOIN screen_exits e ON v.screen_name = e.screen_name
+    WHERE v.screen_name IS NOT NULL
+      AND NOT REGEXP_CONTAINS(v.screen_name, r'^(edit_post_|detail_|view_post_|.*_[0-9a-f]{10,})')
+    ORDER BY v.view_count DESC
+    `;
 
     const [job] = await this.bigquery.createQueryJob({ query });
     const [rows] = await job.getQueryResults();
     return rows;
   }
+
 }
